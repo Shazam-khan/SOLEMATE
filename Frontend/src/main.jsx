@@ -8,6 +8,8 @@ import Home from './components/Home.jsx'
 import About from './components/About.jsx'
 import Contact from './components/Contact.jsx'
 import Signup from './components/Signup.jsx'
+import Admin from './components/Admin.jsx'
+import Dashboard from './components/dashboard.jsx'
 
 const router = createBrowserRouter([
   {
@@ -29,6 +31,14 @@ const router = createBrowserRouter([
       {
         path: "/signup",
         element: <Signup />
+      },
+      {
+        path: "/admin",
+        element: <Admin />
+      },
+      {
+        path: "/dashboard",
+        element: <Dashboard />
       }
     ]
   }
