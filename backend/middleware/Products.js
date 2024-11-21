@@ -14,6 +14,38 @@ export const checkProductId = async (req, res, next, id) => {
     req.product = product.rows[0];
     next();
   } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal Server Error", error: true });
+  }
+};
+
+export const CheckImageId = async (req, res, next, id) => {
+  try {
+    const image = await db.query(`SELECT * FROM "P_Images" WHERE id = $1`, [
+      id,
+    ]);
+
+    if (image.rows.length === 0) {
+      return res.status(404).json({ message: "Image not found", error: true });
+    }
+    req.image = image.rows[0];
+    next();
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal Server Error", error: true });
+  }
+};
+
+export const checkSizeId = async (req, res, next, id) => {
+  try {
+    const size = await db.query(`SELECT * FROM 'P_Size' WHERE id = $1`, [id]);
+    if (size.rows.length === 0) {
+      return res.status(404).json({ message: "Record not found", error: true });
+    }
+    req.size = size.rows[0];
+    next();
+  } catch (error) {
+    console.log(error);
     res.status(500).json({ message: "Internal Server Error", error: true });
   }
 };

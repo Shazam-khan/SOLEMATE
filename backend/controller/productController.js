@@ -1,5 +1,10 @@
 import { db } from "../DB/connect.js";
 import { v4 as uuid } from "uuid";
+import { createClient } from "@supabase/supabase-js";
+import dotenv from "dotenv";
+
+dotenv.config();
+const supabase = createClient(process.env.SUPABASE_URL, process.env.API_KEY);
 
 //get all products
 export const getAllProducts = async (req, res) => {
@@ -30,8 +35,8 @@ export const getProductById = async (req, res) => {
 //create a product
 export const createProduct = async (req, res) => {
   try {
-    const { pName, brand, price, stock } = req.body;
-    if (!pName || !brand || !price || !stock) {
+    const { pName, brand, price } = req.body;
+    if (!pName || !brand || !price) {
       return res
         .status(400)
         .json({ message: "Please fill in all fields", id: null, error: true });
@@ -39,12 +44,12 @@ export const createProduct = async (req, res) => {
 
     const pId = uuid(); //generate random ID
     const product = await db.query(
-      "INSERT INTO Product (p_id,p_name,brand,price,stock) VALUES ($1,$2,$3,$4,$5) RETURNING p_id",
-      [pId, pName, brand, price, stock]
+      "INSERT INTO Product (p_id,p_name,brand,price) VALUES ($1,$2,$3,$4) RETURNING *",
+      [pId, pName, brand, price]
     );
     res.status(201).json({
       message: "Product created successfully",
-      id: product.rows[0].p_id,
+      id: product.rows[0],
       error: false,
     });
   } catch (error) {
@@ -58,7 +63,7 @@ export const createProduct = async (req, res) => {
 
 export const UpdateProduct = async (req, res) => {
   try {
-    const { pName, brand, price, stock } = req.body; // No parentheses in req.body
+    const { pName, brand, price } = req.body; // No parentheses in req.body
     const { id } = req.params;
 
     // Check if the product exists
@@ -70,12 +75,11 @@ export const UpdateProduct = async (req, res) => {
     const updatedName = pName || existingProduct.rows[0].p_name;
     const updatedBrand = brand || existingProduct.rows[0].brand;
     const updatedPrice = price || existingProduct.rows[0].price;
-    const updatedStock = stock || existingProduct.rows[0].stock;
 
     // Update the product
     const updatedProduct = await db.query(
-      "UPDATE Product SET p_name = $1, brand = $2, price = $3, stock = $4 WHERE p_id = $5 RETURNING *",
-      [updatedName, updatedBrand, updatedPrice, updatedStock, id]
+      "UPDATE Product SET p_name = $1, brand = $2, price = $3 WHERE p_id = $5 RETURNING *",
+      [updatedName, updatedBrand, updatedPrice, id]
     );
 
     res.status(200).json({
@@ -91,17 +95,38 @@ export const UpdateProduct = async (req, res) => {
 };
 
 export const DeleteProduct = async (req, res) => {
+  const { id } = req.params;
+
   try {
-    const { id } = req.params;
-    await db.query("DELETE FROM Product WHERE p_id = $1", [id]);
-    res
-      .status(200)
-      .json({ message: "Product deleted successfully", error: false });
+    // Begin transaction
+    await db.query("BEGIN");
+
+    // Delete related entries in dependent tables
+    await db.query(`DELETE FROM 'P_size' WHERE product_id = $1`, [id]);
+    await db.query(`DELETE FROM 'P_Image' WHERE product_id = $1`, [id]);
+    await db.query("DELETE FROM category WHERE product_p_id = $1", [id]);
+    await db.query(`DELETE FROM 'order_details' WHERE product_p_id = $1`, [id]);
+
+    // Delete the product itself
+    const result = await db.query(
+      "DELETE FROM product WHERE p_id = $1 RETURNING *",
+      [id]
+    );
+
+    // Commit transaction
+    await db.query("COMMIT");
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Product not found" });
+    }
   } catch (error) {
+    await db.query("ROLLBACK");
+    console.log(error);
     res.status(500).json({ message: "Error deleting project", error: true });
   }
 };
 
+// Category Controller
 export const getProductCategory = async (req, res) => {
   const { id } = req.params;
 
@@ -206,5 +231,257 @@ export const deleteCategory = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: "Internal Server Error", error: true });
+  }
+};
+
+//Images Controller
+export const getAllProductImages = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const images = await db.query(
+      `SELECT * FROM "P_Images" WHERE product_id = $1`,
+      [id]
+    );
+
+    if (images.rows.length === 0) {
+      return res.status(404).json({
+        message: "No image found for the required product",
+        Images: null,
+        error: true,
+      });
+    }
+
+    res
+      .status(200)
+      .json({ message: "Images found", Images: images.rows, error: false });
+  } catch (error) {
+    console.log(error);
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", Images: null, error: true });
+  }
+};
+
+export const getImageById = async (req, res) => {
+  res
+    .status(200)
+    .json({ message: "Image Found", Images: req.image, error: false });
+};
+
+export const postImage = async (req, res) => {
+  const { id } = req.params;
+  const { filename } = req.body;
+  console.log(req.file);
+  try {
+    const file = req.file;
+
+    if (!filename || !file) {
+      return res.status(400).json({
+        message: "Filename and image file are required.",
+        Images: null,
+        error: true,
+      });
+    }
+
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("solemate")
+      .upload(`public/${filename}`, file.buffer, {
+        cacheControl: "3600",
+        upsert: false, // Prevent overwriting
+        contentType: file.mimetype, // Set correct MIME type
+      });
+
+    if (uploadError) {
+      return res.status(500).json({
+        message: `Image upload failed: ${uploadError.message}`,
+        Images: null,
+        error: true,
+      });
+    }
+
+    console.log("File uploaded successfully:", uploadData);
+
+    const { data: publicUrlData } = supabase.storage
+      .from("solemate")
+      .getPublicUrl(`public/${filename}`);
+    const publicUrl = publicUrlData.publicUrl;
+
+    console.log("Public URL:", publicUrl);
+
+    const iId = uuid();
+
+    const images = await db.query(
+      `INSERT INTO "P_Images" (id, image_url, product_id) VALUES ($1, $2, $3) RETURNING *`,
+      [iId, publicUrl, id]
+    );
+
+    if (images.rows.length === 0) {
+      return res
+        .status(500)
+        .json({ message: "Insert failed", Images: null, error: true });
+    }
+
+    res.status(200).json({
+      message: "Image uploaded and metadata saved.",
+      Images: images.rows,
+      error: false,
+    });
+  } catch (error) {
+    console.error("Error inserting image:", error);
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", Images: null, error: true });
+  }
+};
+
+export const updateImage = async (req, res) => {
+  const { iId } = req.params;
+  const { image_url } = req.body;
+
+  try {
+    const updatedImage = await db.query(
+      `UPDATE "P_Images" SET image_url = $1 WHERE id = $2 RETURNING *`,
+      [image_url, iId]
+    );
+
+    res.status(201).json({
+      message: "Image Updated successfully",
+      Images: updateImage[0].rows,
+      error: false,
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", ImageS: null, error: true });
+  }
+};
+
+export const deleteImage = async (req, res) => {
+  const { iId } = req.params;
+
+  try {
+    await db.query(`DELETE FROM "P_Images" WHERE id = $1`, [iId]);
+    res.status(204).json({
+      message: "Image removed successfully",
+      Images: null,
+      error: false,
+    });
+  } catch (error) {
+    console.log(error);
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", Images: null, error: true });
+  }
+};
+
+export const getAllSizes = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const sizes = await db.query(
+      `SELECT * FROM 'P_Size' WHERE product_id = $1`,
+      [id]
+    );
+
+    if (sizes.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No record found", Sizes: null, error: true });
+    }
+
+    res
+      .status(200)
+      .json({ message: "Records found", Sizes: sizes.rows, error: false });
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", Sizes: null, error: true });
+  }
+};
+
+export const getSizebyId = async (req, res) => {
+  res
+    .status(200)
+    .json({ message: "Record Found", Sizes: req.size, error: false });
+};
+
+export const postSize = async (req, res) => {
+  const { id } = req.params;
+  const { size, stock } = req.body;
+
+  if (!stock || !size) {
+    return res.status(400).json({
+      message: "Bad request, please fill in all fields",
+      Sizes: null,
+      error: true,
+    });
+  }
+  try {
+    const sid = uuid();
+    const input_val = await db.query(
+      `INSERT INTO 'P_Size' (id, size, stock, product_id) VALUES ($1,$2,$3,$4) RETURNING *`,
+      [sid, size, stock, id]
+    );
+
+    res.status(201).json({
+      message: "Record inserted successfully",
+      Sizes: input_val.rows[0],
+      error: false,
+    });
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", Sizes: null, error: true });
+  }
+};
+
+export const updateSizeInfo = async (req, res) => {
+  const { sId } = req.params;
+  const { stock, size } = req.body;
+
+  try {
+    const existing = await db.query(`SELECT * FROM 'P_Size' WHERE id = $1`, [
+      sId,
+    ]);
+
+    const updateSize = size || existing.rows[0].size;
+    const updateStock = stock || existing.rows[0].stock;
+
+    const updatedValue = await db.query(
+      `UPDATE 'P_Size' SET size = $1, stock = $2 WHERE id = $3 RETURNING *`,
+      [updateSize, updateStock, sId]
+    );
+
+    res.status(200).json({
+      message: "Record updated successfully",
+      Sizes: updatedValue.rows[0],
+      error: false,
+    });
+  } catch (error) {
+    console.log(error);
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", Sizes: null, error: true });
+  }
+};
+
+export const deleteSieInfo = async (req, res) => {
+  const { sId } = req.params;
+
+  try {
+    await db.query(`DELETE FROM 'P_Size' WHERE id = $1`, [sId]);
+    res.status(204).json({
+      message: "Record deleted successfully",
+      Sizes: null,
+      error: false,
+    });
+  } catch (error) {
+    console.log(error);
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", Sizes: null, error: true });
   }
 };
