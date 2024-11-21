@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const API_URL = "http://localhost:5000/api/products"; // Adjust this URL if needed
+const IMAGE_URL = "http://localhost:5000/api/products"; // Base URL for product images
 
 function Products() {
     const [products, setProducts] = useState([]);
@@ -15,11 +16,29 @@ function Products() {
         try {
             const response = await axios.get(API_URL);
             if (response.status === 200) {
-                setProducts(response.data.Products);
+                const productsWithImages = await attachImagesToProducts(response.data.Products);
+                setProducts(productsWithImages);
             }
         } catch (err) {
             setError("Failed to fetch products. Please try again later.");
         }
+    };
+
+    // Fetch images for each product and attach to the product object
+    const attachImagesToProducts = async (products) => {
+        const productWithImagesPromises = products.map(async (product) => {
+            try {
+                const imageResponse = await axios.get(`${IMAGE_URL}/${product.p_id}/images`);
+                if (imageResponse.status === 200 && imageResponse.data.Images.length > 0) {
+                    return { ...product, imageUrl: imageResponse.data.Images[0].image_url }; // Use the first image
+                }
+            } catch (err) {
+                console.error(`Failed to fetch images for product ${product.p_id}`);
+            }
+            return { ...product, imageUrl: null }; // Fallback if no image is found
+        });
+
+        return Promise.all(productWithImagesPromises);
     };
 
     // Navigate to product details page
@@ -46,16 +65,13 @@ function Products() {
                     {products.length > 0 ? (
                         products.map((product) => (
                             <div key={product.p_id} className="relative group" onClick={() => handleProductClick(product.p_id)}>
-                                <div class="overflow-hidden aspect-w-1 aspect-h-1">
-                                    <img class="object-cover w-full h-full transition-all duration-300 group-hover:scale-125" src="https://cdn.rareblocks.xyz/collection/clarity-ecommerce/images/item-cards/4/product-1.png" alt="" />
-                                </div>
-                                {/* <div className="overflow-hidden relative w-full h-full">
+                                <div className="overflow-hidden relative aspect-w-1 aspect-h-1">
                                     <img 
                                         className="object-cover w-full h-full transition-all duration-300 group-hover:scale-110"
-                                        src={product.imageUrl || "https://via.placeholder.com/200"} // Placeholder if no image is provided
+                                        src={product.imageUrl || "https://via.placeholder.com/200"}
                                         alt={product.p_name}
                                     />
-                                </div> */}
+                                </div> 
                                 {product.isNew && (
                                     <div className="absolute left-3 top-3">
                                         <p className="sm:px-3 sm:py-1.5 px-1.5 py-1 text-[8px] sm:text-xs font-bold tracking-wide text-gray-900 uppercase bg-white rounded-full">New</p>
@@ -64,12 +80,11 @@ function Products() {
                                 <div className="flex items-start justify-between mt-4 space-x-4">
                                     <div>
                                         <h3 className="text-xs font-bold text-gray-900 sm:text-sm md:text-base">
-                                            <a href="#" title="">
+                                            <a href="" title="">
                                                 {product.p_name}
                                             </a>
                                         </h3>
                                         <div className="flex items-center mt-2.5 space-x-px">
-                                            {/* Render rating dynamically */}
                                             {[...Array(5)].map((_, index) => (
                                                 <svg key={index} className={`w-3 h-3 ${index < product.rating ? 'text-yellow-400' : 'text-gray-300'} sm:w-4 sm:h-4`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />

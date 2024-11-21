@@ -1,16 +1,17 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import App from './App.jsx'
-import './index.css'
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
-import Layout from './Layout.jsx'
-import Home from './components/Home.jsx'
-import About from './components/About.jsx'
-import Contact from './components/Contact.jsx'
-import Signup from './components/Signup.jsx'
-import Admin from './components/Admin.jsx'
-import Dashboard from './components/dashboard.jsx'
-import Products from './components/Products.jsx'
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App.jsx';
+import './index.css';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import Layout from './Layout.jsx';
+import Home from './components/Home.jsx';
+import About from './components/About.jsx';
+import Contact from './components/Contact.jsx';
+import Signup from './components/Signup.jsx';
+import Admin from './components/Admin.jsx';
+import Dashboard from './components/dashboard.jsx';
+import Products from './components/Products.jsx';
+import ProductDetail from './components/ProductDetail.jsx'; // Import ProductDetail
 
 const router = createBrowserRouter([
   {
@@ -18,39 +19,43 @@ const router = createBrowserRouter([
     element: <Layout />,
     children: [
       {
-        path: "",
-        element: <Home />
+        path: '',
+        element: <Home />,
       },
       {
-        path: "/about",
-        element: <About />
+        path: '/about',
+        element: <About />,
       },
       {
-        path: "/products",
-        element: <Products />
+        path: '/products',
+        element: <Products />,
       },
       {
-        path: "/contact",
-        element: <Contact />
+        path: '/products/:productId', // Add dynamic route for ProductDetail
+        element: <ProductDetail />,
       },
       {
-        path: "/signup",
-        element: <Signup />
+        path: '/contact',
+        element: <Contact />,
       },
       {
-        path: "/admin",
-        element: <Admin />
+        path: '/signup',
+        element: <Signup />,
       },
       {
-        path: "/dashboard",
-        element: <Dashboard />
-      }
-    ]
-  }
-])
+        path: '/admin',
+        element: <Admin />,
+      },
+      {
+        path: '/dashboard',
+        element: <Dashboard />,
+      },
+    ],
+  },
+]);
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <RouterProvider router={router} />
-  </StrictMode>,
-)
+  </StrictMode>
+);
