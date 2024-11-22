@@ -3,9 +3,10 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 
 const ProductDetail = () => {
-  const { productId } = useParams(); // Get product ID from URL
+  const { productId } = useParams(); 
 
   const [product, setProduct] = useState(null);
+  const [category, setCategory] = useState(null);
   const [images, setImages] = useState([]);
   const [selectedSize, setSelectedSize] = useState("");
   const [quantity, setQuantity] = useState(1);
@@ -14,23 +15,29 @@ const ProductDetail = () => {
 
   // Fetch product details and images
   const fetchProductDetails = async () => {
-    console.log(productId);
     try {
       const productResponse = await axios.get(
         `http://localhost:5000/api/products/${productId}`
       );
       if (productResponse.status === 200) {
-        setProduct(productResponse.data);
+        setProduct(productResponse.data.Product);
       }
-      console.log(productResponse.data);
 
-    //   const imagesResponse = await axios.get(
-    //     `http://localhost:5000/api/products/${productId}/images`
-    //   );
-    //   if (imagesResponse.status === 200) {
-    //     setImages(imagesResponse.data.map((img) => img.image_url));
-    //   }
-    //   console.log(imagesResponse.data);
+      const imagesResponse = await axios.get(
+        `http://localhost:5000/api/products/${productId}/images`
+      );
+      if (imagesResponse.status === 200) {
+        setImages(imagesResponse.data.Images.map((img) => img.image_url));
+      }
+
+      // Fetch category info
+      const categoryResponse = await axios.get(
+        `http://localhost:5000/api/products/${productId}/category`
+      );
+      if (categoryResponse.status === 200) {
+        const categoryData = categoryResponse.data.Category[0];
+        setCategory(categoryData);
+      }
     } catch (err) {
       setError("Failed to fetch product details. Please try again later.");
     }
@@ -52,18 +59,6 @@ const ProductDetail = () => {
     });
   };
 
-  const prevSlide = () => {
-    const isFirstSlide = currentIndex === 0;
-    const newIndex = isFirstSlide ? images.length - 1 : currentIndex - 1;
-    setCurrentIndex(newIndex);
-  };
-
-  const nextSlide = () => {
-    const isLastSlide = currentIndex === images.length - 1;
-    const newIndex = isLastSlide ? 0 : currentIndex + 1;
-    setCurrentIndex(newIndex);
-  };
-
   if (error) {
     return <p className="text-red-600">{error}</p>;
   }
@@ -73,94 +68,105 @@ const ProductDetail = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 bg-white text-black">
-      <div className="grid md:grid-cols-2 gap-8">
-        {/* Image Carousel */}
-        {/* <div className="relative w-full h-[400px] group">
-          <div
-            style={{
-              backgroundImage: `url(${images[currentIndex] || "/placeholder.svg"})`,
-            }}
-            className="w-full h-full bg-center bg-cover duration-500"
-          ></div>
-          <button
-            onClick={prevSlide}
-            className="hidden group-hover:block absolute top-[50%] left-5 text-2xl rounded-full p-2 bg-black/20 text-white"
-          >
-            &#8249;
-          </button>
-          <button
-            onClick={nextSlide}
-            className="hidden group-hover:block absolute top-[50%] right-5 text-2xl rounded-full p-2 bg-black/20 text-white"
-          >
-            &#8250;
-          </button>
-        </div> */}
-
-        {/* Product Details */}
-        <div className="space-y-4">
-          <h1 className="text-3xl font-bold">{product.p_name || "Product Name"}</h1>
-          <p className="text-xl">{product.type || "Product Type"}</p>
-          <p>{product.description || "No description available."}</p>
-          <p>Brand: {product.brand || "Unknown"}</p>
-          <p className="text-2xl font-semibold">
-            ${product.price ? product.price.toFixed(2) : "0.00"}
-          </p>
-
-          {/* Size Selector */}
-          <div>
-            <label className="block mb-2">Size:</label>
-            <select
-              value={selectedSize}
-              onChange={(e) => setSelectedSize(e.target.value)}
-              className="w-full p-2 border rounded"
-            >
-              <option value="" disabled>
-                Select size
-              </option>
-              {product.sizes?.map((size) => (
-                <option key={size} value={size}>
-                  {size}
-                </option>
+    <section className="py-12 bg-white sm:py-16 lg:py-20">
+      <div className="px-4 py-16 mx-auto sm:px-6 lg:px-8 max-w-7xl">
+        <div className="grid md:grid-cols-2 gap-8">
+          {/* Image Carousel with Thumbnails */}
+          <div className="relative flex">
+            {/* Thumbnails */}
+            <div className="flex flex-col space-y-2 mr-4">
+              {images.map((img, index) => (
+                <img
+                  key={index}
+                  src={img || "/placeholder.svg"}
+                  alt={`Thumbnail ${index + 1}`}
+                  className={`w-20 h-20 object-cover cursor-pointer border rounded-md ${
+                    currentIndex === index ? "border-blue-500" : "border-gray-300"
+                  }`}
+                  onClick={() => setCurrentIndex(index)}
+                />
               ))}
-            </select>
-          </div>
+            </div>
 
-          {/* Quantity Selector */}
-          <div>
-            <label className="block mb-2">Quantity:</label>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                className="p-2 border rounded"
-              >
-                -
-              </button>
-              <input
-                type="number"
-                value={quantity}
-                readOnly
-                className="w-16 text-center border rounded"
-              />
-              <button
-                onClick={() => setQuantity((q) => q + 1)}
-                className="p-2 border rounded"
-              >
-                +
-              </button>
+            {/* Main Image */}
+            <div className="relative w-full h-[400px] group">
+              <div
+                style={{
+                  backgroundImage: `url(${images[currentIndex] || "/placeholder.svg"})`,
+                }}
+                className="w-full h-full bg-center bg-cover duration-500 rounded-md shadow-lg"
+              ></div>
             </div>
           </div>
 
-          {/* Add to Cart */}
-          <button
-            onClick={handleAddToCart}
-            className="w-full p-2 bg-blue-500 text-white rounded"
-          >
-            Add to Cart
-          </button>
+          {/* Product Details */}
+          <div className="space-y-4 border-l-2 border-gray-300 pl-12 ml-8">
+            <h1 className="text-3xl font-bold">{product.p_name || "Product Name"}</h1>
+            <p className="text-xl">Type: {category?.c_name || "Unknown"}</p>
+            <p className="text-lg">Description: {category?.description || "No description available."}</p>
+            <p className="text-xl">Brand: {product.brand || "Unknown"}</p>
+            <p className="text-xl">
+              Price:
+              <label className="ml-4 text-2xl font-semibold">
+                ${product.price ? product.price.toFixed(2) : "0.00"}
+              </label>
+            </p>
+
+            {/* Size Selector */}
+            <div>
+              <label className="mr-4">Size:</label>
+              <select
+                value={selectedSize}
+                onChange={(e) => setSelectedSize(e.target.value)}
+                className="p-2 border rounded-md"
+              >
+                <option value="" disabled>
+                  Select size
+                </option>
+                {product.sizes?.map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Quantity Selector */}
+            <div>
+              <div className="flex items-center space-x-2">
+                <label className="mr-4">Quantity:</label>
+                <button
+                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                  className="p-2 border rounded-md border-gray-500"
+                >
+                  -
+                </button>
+                <input
+                  type="number"
+                  value={quantity}
+                  readOnly
+                  className="w-16 h-10 text-center border rounded-md border-gray-500"
+                />
+                <button
+                  onClick={() => setQuantity((q) => q + 1)}
+                  className="p-2 border rounded-md border-gray-500"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            {/* Add to Cart */}
+            <button
+              onClick={handleAddToCart}
+              className="w-96 p-3 bg-custom-brown text-white rounded-md hover:border-2 hover:border-custom-brown hover:text-custom-brown hover:bg-transparent"
+            >
+              Add to Cart
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 

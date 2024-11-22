@@ -3,6 +3,7 @@ import { data } from '../data/data.js';
 import { IoChevronBackOutline, IoChevronForwardOutline } from 'react-icons/io5'; 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRightLong } from '@fortawesome/free-solid-svg-icons';
+import { Link } from 'react-router-dom';
 
 const Hero = () => {
   const [currentIndex, setCurrentIndex] = useState(0); 
@@ -82,8 +83,9 @@ const Hero = () => {
                 >
                   {item.subText}
                 </p>
+                <Link to="/products">
                 <button
-                  type="button"
+                  type="button" 
                   className="mt-8 text-2xl text-white bg-custom-brown border-2 border-custom-brown font-bold py-2 px-24 relative group overflow-hidden"
                 >
                   Shop Now
@@ -94,6 +96,7 @@ const Hero = () => {
                     <FontAwesomeIcon icon={faArrowRightLong} className="ml-2" />
                   </span>
                 </button>
+                </Link>
               </div>
 
               {/* Image as background */}

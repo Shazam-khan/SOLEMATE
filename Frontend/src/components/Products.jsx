@@ -1,110 +1,163 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { useNavigate, useParams } from "react-router-dom";
 
-const API_URL = "http://localhost:5000/api/products"; // Adjust this URL if needed
+const API_URL = "http://localhost:5000/api/products"; // Base API URL
 const IMAGE_URL = "http://localhost:5000/api/products"; // Base URL for product images
 
 function Products() {
-    const [products, setProducts] = useState([]);
-    const [error, setError] = useState("");
-    const navigate = useNavigate();
+  const [products, setProducts] = useState([]);
+  const [error, setError] = useState("");
+  const { category } = useParams(); // Extract category from URL
+  const navigate = useNavigate();
 
-    // Fetch products from the backend
-    const fetchProducts = async () => {
-        setError("");
-        try {
-            const response = await axios.get(API_URL);
-            if (response.status === 200) {
-                const productsWithImages = await attachImagesToProducts(response.data.Products);
-                setProducts(productsWithImages);
-            }
-        } catch (err) {
-            setError("Failed to fetch products. Please try again later.");
+  // Fetch all products or products by category
+  const fetchProducts = async () => {
+    setError("");
+    try {
+      const response = await axios.get(API_URL);
+      if (response.status === 200) {
+        const productsWithImages = await attachImagesToProducts(
+          response.data.Products
+        );
+
+        // Filter products if a specific category is in the URL
+        if (category) {
+          const filteredProducts = await filterProductsByCategory(
+            productsWithImages,
+            category
+          );
+          setProducts(filteredProducts);
+        } else {
+          setProducts(productsWithImages); // Show all products
         }
-    };
+      }
+    } catch (err) {
+      setError("Failed to fetch products. Please try again later.");
+    }
+  };
 
-    // Fetch images for each product and attach to the product object
-    const attachImagesToProducts = async (products) => {
-        const productWithImagesPromises = products.map(async (product) => {
-            try {
-                const imageResponse = await axios.get(`${IMAGE_URL}/${product.p_id}/images`);
-                if (imageResponse.status === 200 && imageResponse.data.Images.length > 0) {
-                    return { ...product, imageUrl: imageResponse.data.Images[0].image_url }; // Use the first image
-                }
-            } catch (err) {
-                console.error(`Failed to fetch images for product ${product.p_id}`);
-            }
-            return { ...product, imageUrl: null }; // Fallback if no image is found
-        });
+  // Fetch images for each product and attach to the product object
+  const attachImagesToProducts = async (products) => {
+    const productWithImagesPromises = products.map(async (product) => {
+      try {
+        const imageResponse = await axios.get(
+          `${IMAGE_URL}/${product.p_id}/images`
+        );
 
-        return Promise.all(productWithImagesPromises);
-    };
+        if (imageResponse.status === 200) {
+          const images = imageResponse.data.Images;
+          if (images.length > 0) {
+            return { ...product, imageUrl: images[0].image_url };
+          } else {
+            return { ...product, imageUrl: "https://via.placeholder.com/200" };
+          }
+        }
+        return { ...product, imageUrl: "https://via.placeholder.com/200" };
+      } catch (err) {
+        return { ...product, imageUrl: "https://via.placeholder.com/200" };
+      }
+    });
 
-    // Navigate to product details page
-    const handleProductClick = (productId) => {
-        navigate(`/products/${productId}`);
-    };
+    return Promise.all(productWithImagesPromises);
+  };
 
-    useEffect(() => {
-        fetchProducts();
-    }, []);
-
-    return (
-        <section className="py-12 bg-white sm:py-16 lg:py-20">
-            <div className="px-4 py-16 mx-auto sm:px-6 lg:px-8 max-w-7xl">
-                <div className="max-w-lg mx-auto text-center">
-                    <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">Shoes That Connect the Soles</h2>
-                </div>
-
-                <div className="grid grid-cols-2 gap-6 mt-10 lg:mt-16 lg:gap-4 lg:grid-cols-4">
-                    {error && (
-                        <p className="text-red-600 text-sm text-center mb-4">{error}</p>
-                    )}
-
-                    {products.length > 0 ? (
-                        products.map((product) => (
-                            <div key={product.p_id} className="relative group" onClick={() => handleProductClick(product.p_id)}>
-                                <div className="overflow-hidden relative aspect-w-1 aspect-h-1">
-                                    <img 
-                                        className="object-cover w-full h-full transition-all duration-300 group-hover:scale-110"
-                                        src={product.imageUrl || "https://via.placeholder.com/200"}
-                                        alt={product.p_name}
-                                    />
-                                </div> 
-                                {product.isNew && (
-                                    <div className="absolute left-3 top-3">
-                                        <p className="sm:px-3 sm:py-1.5 px-1.5 py-1 text-[8px] sm:text-xs font-bold tracking-wide text-gray-900 uppercase bg-white rounded-full">New</p>
-                                    </div>
-                                )}
-                                <div className="flex items-start justify-between mt-4 space-x-4">
-                                    <div>
-                                        <h3 className="text-xs font-bold text-gray-900 sm:text-sm md:text-base">
-                                            <a href="" title="">
-                                                {product.p_name}
-                                            </a>
-                                        </h3>
-                                        <div className="flex items-center mt-2.5 space-x-px">
-                                            {[...Array(5)].map((_, index) => (
-                                                <svg key={index} className={`w-3 h-3 ${index < product.rating ? 'text-yellow-400' : 'text-gray-300'} sm:w-4 sm:h-4`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                                </svg>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-xs font-bold text-gray-900 sm:text-sm md:text-base">${product.price}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        ))
-                    ) : (
-                        <p className="text-center text-gray-600">No products found.</p>
-                    )}
-                </div>
-            </div>
-        </section>
+  // Filter products by category
+  const filterProductsByCategory = async (products, categoryName) => {
+    // Filter only the products whose category matches the given category name
+    const filteredProducts = await Promise.all(
+      products.map(async (product) => {
+        try {
+          const categoryResponse = await axios.get(
+            `${API_URL}/${product.p_id}/category`
+          );
+          if (categoryResponse.status === 200) {
+            const productCategory = categoryResponse.data.Category[0].c_name;
+            return (
+              productCategory.toLowerCase() === categoryName.toLowerCase()
+            );
+          }
+        } catch (err) {
+          console.error("Failed to fetch category for product:", err);
+        }
+        return false;
+      })
     );
+
+    return products.filter((_, index) => filteredProducts[index]);
+  };
+
+  // Navigate to product details page
+  const handleProductClick = async (productId) => {
+    try {
+      // Fetch the category for the clicked product
+      const categoryResponse = await axios.get(
+        `${API_URL}/${productId}/category`
+      );
+      if (categoryResponse.status === 200) {
+        const categoryName = categoryResponse.data.Category[0].c_name;
+        navigate(`/productDetail/${productId}`);
+      }
+    } catch (err) {
+      console.error("Failed to navigate to product details:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, [category]); // Refetch products when category changes
+
+  return (
+    <section className="py-12 bg-white sm:py-16 lg:py-20">
+      <div className="px-4 py-16 mx-auto sm:px-6 lg:px-8 max-w-7xl">
+        <div className="max-w-lg mx-auto text-center">
+          <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+            {category
+              ? `${category.charAt(0).toUpperCase() + category.slice(1)}`
+              : "All Shoes"}
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-2 gap-6 mt-10 lg:mt-16 lg:gap-4 lg:grid-cols-4">
+          {error && (
+            <p className="text-red-600 text-sm text-center mb-4">{error}</p>
+          )}
+
+          {products.length > 0 ? (
+            products.map((product) => (
+              <div
+                key={product.p_id}
+                className="relative group"
+                onClick={() => handleProductClick(product.p_id)}
+              >
+                <div className="overflow-hidden relative aspect-w-1 aspect-h-1">
+                  <img
+                    className="object-cover w-full h-full transition-all duration-300 group-hover:scale-110"
+                    src={product.imageUrl}
+                    alt={product.p_name}
+                  />
+                </div>
+                <div className="flex items-start justify-between mt-4 space-x-4">
+                  <div>
+                    <h3 className="text-xs font-bold text-gray-900 sm:text-sm md:text-base">
+                      {product.p_name}
+                    </h3>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-bold text-gray-900 sm:text-sm md:text-base">
+                      ${product.price}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-center text-gray-600">No products found.</p>
+          )}
+        </div>
+      </div>
+    </section>
+  );
 }
 
 export default Products;

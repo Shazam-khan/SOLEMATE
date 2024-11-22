@@ -30,12 +30,12 @@ function Footer() {
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link to="/about" className="hover:underline">
+                                    <Link to="/products" className="hover:underline">
                                         Products
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link to="/about" className="hover:underline">
+                                    <Link to="/contact" className="hover:underline">
                                         Contact Us
                                     </Link>
                                 </li>
@@ -46,7 +46,7 @@ function Footer() {
                             <ul className="text-gray-400 space-y-5 font-medium">
                                 <li>
                                     <a
-                                        href="https://github.com/hiteshchoudhary"
+                                        href="https://github.com/Shazam-khan/SOLEMATE"
                                         className="hover:underline"
                                         target="_blank"
                                         rel="noreferrer"
@@ -55,9 +55,14 @@ function Footer() {
                                     </a>
                                 </li>
                                 <li>
-                                    <Link to="/" className="hover:underline">
+                                    <a
+                                        href="https://github.com/Shazam-khan/SOLEMATE"
+                                        className="hover:underline"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
                                         Discord
-                                    </Link>
+                                    </a>
                                 </li>
                             </ul>
                         </div>
@@ -82,8 +87,8 @@ function Footer() {
                 <div className="px-4 sm:flex sm:items-center sm:justify-between">
                     <span className="text-sm text-gray-400 sm:text-center">
                         © 2024_
-                        <a href="https://hiteshchoudhary.com/" className="hover:underline">
-                            Shazam Khan
+                        <a href="https://github.com/Shazam-khan/SOLEMATE" className="hover:underline">
+                            SoleMate
                         </a>
                         . All Rights Reserved.
                     </span>

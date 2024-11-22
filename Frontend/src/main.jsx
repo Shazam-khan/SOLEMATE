@@ -31,7 +31,11 @@ const router = createBrowserRouter([
         element: <Products />,
       },
       {
-        path: '/products/:productId', // Add dynamic route for ProductDetail
+        path: '/products/:category', // Dynamic category path
+        element: <Products />, // Same Products component for category-based filtering
+      },
+      {
+        path: '/productDetail/:productId', // Dynamic product detail based on category
         element: <ProductDetail />,
       },
       {

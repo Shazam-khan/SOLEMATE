@@ -105,7 +105,6 @@ export const DeleteProduct = async (req, res) => {
     await db.query(`DELETE FROM 'P_size' WHERE product_id = $1`, [id]);
     await db.query(`DELETE FROM 'P_Image' WHERE product_id = $1`, [id]);
     await db.query("DELETE FROM category WHERE product_p_id = $1", [id]);
-    await db.query(`DELETE FROM 'order_details' WHERE product_p_id = $1`, [id]);
 
     // Delete the product itself
     const result = await db.query(
@@ -131,9 +130,9 @@ export const getProductCategory = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const category = await db.query("SELECT * FROM Category WHERE id = $1", [
-      id,
-    ]);
+    const category = await db.query("SELECT * FROM Category WHERE product_p_id = $1", 
+      [id]
+    );
 
     if (category.rows.length === 0) {
       return res.status(404).json({
@@ -168,7 +167,7 @@ export const createCategory = async (req, res) => {
   try {
     const cId = uuid();
     const newCategory = await db.query(
-      "INSERT INTO Category (c_id,user_preference,c_name,description,id) VALUES ($1,$2,$3,$4,$5) RETURNING *",
+      "INSERT INTO Category (c_id,user_preference,c_name,description,product_p_id) VALUES ($1,$2,$3,$4,$5) RETURNING *",
       [cId, userPreference, cName, description, id]
     );
     res.status(201).json({
@@ -245,10 +244,10 @@ export const getAllProductImages = async (req, res) => {
     );
 
     if (images.rows.length === 0) {
-      return res.status(404).json({
-        message: "No image found for the required product",
-        Images: null,
-        error: true,
+      return res.status(200).json({
+        message: "No images found for the required product",
+        Images: [], // Return empty array instead of null
+        error: false,
       });
     }
 
