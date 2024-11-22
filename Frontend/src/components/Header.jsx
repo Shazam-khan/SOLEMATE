@@ -110,16 +110,16 @@ function Header() {
                                     </NavLink>
                                     <div className="absolute hidden group-hover:block left-0 mt-2 w-48 bg-custom-brown-light shadow-lg rounded-lg z-50">
                                         <NavLink
-                                            to="/products/formal-shoes"
+                                            to="/products/formal shoes"
                                             className="block px-4 py-2 text-white hover:bg-custom-brown"
                                         >
                                             Formal Shoes
                                         </NavLink>
                                         <NavLink
-                                            to="/products/joggers"
+                                            to="/products/sneakers"
                                             className="block px-4 py-2 text-white hover:bg-custom-brown"
                                         >
-                                            Joggers
+                                            Sneakers
                                         </NavLink>
                                         <NavLink
                                             to="/products/heels"

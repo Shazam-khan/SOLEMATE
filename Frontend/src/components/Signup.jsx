@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import "./Signup.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGooglePlusG, faFacebookF, faGithub, faLinkedinIn } from "@fortawesome/free-brands-svg-icons";
+import ProductDetail from "./ProductDetail";
 
 const Modal = () => {
     const [isModalOpen, setIsModalOpen] = useState(true); // Modal visibility state
@@ -22,6 +23,7 @@ const Modal = () => {
     });
 
     const [error, setError] = useState("");
+    const [userId, setUserId] = useState(null); // Store user ID after login/signup
 
     // Validation functions
     const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -90,6 +92,7 @@ const Modal = () => {
             if (result.error) {
                 setError(result.message);
             } else {
+                setUserId(result.User.u_id); // Save the userId here
                 alert("Signup successful!");
                 setIsModalOpen(false);
             }
@@ -129,6 +132,7 @@ const Modal = () => {
             if (result.error) {
                 setError(result.message);
             } else {
+                setUserId(result.User.u_id); // Save the userId here
                 alert("Login successful!");
                 setIsModalOpen(false);
             }
@@ -271,6 +275,9 @@ const Modal = () => {
                         </div>
                     </div>
                 </div>
+
+                {/* Pass userId to ProductDetail component */}
+                {userId && <ProductDetail userId={userId} />}
             </div>
         </div>
     );

@@ -5,32 +5,24 @@ import {
   createOrder,
   patchOrder,
   deleteOrder,
-  getAllOrderDetails,
-  getOrderDetailById,
-  createOrderDetail,
-  patchDetail,
-  deleteDetail,
 } from "../controller/orderController.js";
-import { verifyOrderDetail, verifyOrderId } from "../middleware/Order.js";
+import { verifyOrderId } from "../middleware/Order.js";
+import orderDetailRouter from "./orderDetailRoutes.js";
 
 const orderRouter = express.Router({ mergeParams: true });
 
-//order routes
+// Order routes
 orderRouter.get("/", getAllOrders);
 orderRouter.post("/", createOrder);
 
-orderRouter.param("id", verifyOrderId);
+// Update to use 'orderId' for clarity
+orderRouter.param("orderId", verifyOrderId);
 
-orderRouter.get("/:id", getOrderById);
-orderRouter.put("/:id", patchOrder);
-orderRouter.delete("/:id", deleteOrder);
+orderRouter.get("/:orderId", getOrderById);
+orderRouter.put("/:orderId", patchOrder);
+orderRouter.delete("/:orderId", deleteOrder);
 
-//order detail routes
-orderRouter.get("/:id/order_details/", getAllOrderDetails);
-orderRouter.post("/:id/order_detail/", createOrderDetail);
+// Nested order detail routes
+orderRouter.use("/:orderId/order_details", orderDetailRouter);
 
-orderRouter.param("od_id", verifyOrderDetail);
-
-orderRouter.get("/:id/order_details/:od_id", getOrderDetailById);
-orderRouter.put("/:id/order_details/:od_id", patchDetail);
-orderRouter.delete("/:id/order_details/:od_id", deleteDetail);
+export default orderRouter;

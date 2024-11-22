@@ -46,14 +46,6 @@ const Hero = () => {
 
   return (
     <div className="h-screen relative bg-brown-gradient overflow-hidden">
-      <button className="absolute left-5 top-1/2 transform -translate-y-1/2 z-20 text-3xl text-transparent" onClick={prevSlide}>
-        <IoChevronBackOutline />
-      </button>
-
-      <button className="absolute right-5 top-1/2 transform -translate-y-1/2 z-20 text-3xl text-transparent" onClick={nextSlide}>
-        <IoChevronForwardOutline />
-      </button>
-
       <div>
         {data.map((item, index) => (
           <main

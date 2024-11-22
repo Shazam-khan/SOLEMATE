@@ -2,12 +2,13 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 
-const ProductDetail = () => {
-  const { productId } = useParams(); 
+const ProductDetail = ({ userId }) => {
+  const { productId } = useParams();
 
   const [product, setProduct] = useState(null);
   const [category, setCategory] = useState(null);
   const [images, setImages] = useState([]);
+  const [sizes, setSizes] = useState([]); // Updated state to hold sizes
   const [selectedSize, setSelectedSize] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [error, setError] = useState("");
@@ -38,6 +39,14 @@ const ProductDetail = () => {
         const categoryData = categoryResponse.data.Category[0];
         setCategory(categoryData);
       }
+
+      // Fetch sizes for the product
+      const sizesResponse = await axios.get(
+        `http://localhost:5000/api/products/${productId}/size`
+      );
+      if (sizesResponse.status === 200) {
+        setSizes(sizesResponse.data.Sizes.map((size) => size.size));
+      }
     } catch (err) {
       setError("Failed to fetch product details. Please try again later.");
     }
@@ -47,16 +56,50 @@ const ProductDetail = () => {
     fetchProductDetails();
   }, [productId]);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!selectedSize) {
       alert("Please select a size before adding to cart.");
       return;
     }
-    console.log("Added to cart:", {
-      name: product?.p_name,
-      size: selectedSize,
-      quantity,
-    });
+
+    try {
+      // Check if the order exists for the user
+      let orderResponse = await axios.get(
+        `http://localhost:5000/api/users/${userId}/order`
+      );
+
+      let orderId;
+      if (orderResponse.status === 200 && orderResponse.data.Orders.length > 0) {
+        // Use the existing order
+        orderId = orderResponse.data.Orders[0].o_id;
+      } else {
+        // Create a new order
+        const createOrderResponse = await axios.post(
+          `http://localhost:5000/api/order`,
+          {
+            user_id: userId, // User ID should be passed here
+          }
+        );
+        orderId = createOrderResponse.data.Order.o_id;
+      }
+
+      // Now, create or update the order details
+      const createOrderDetailResponse = await axios.post(
+        `http://localhost:5000/api/users/${userId}/order/${orderId}/order_details`,
+        {
+          quantity,
+          p_id: productId,
+          size: selectedSize,
+        }
+      );
+
+      if (createOrderDetailResponse.status === 201) {
+        console.log("Order detail created/updated successfully");
+      }
+    } catch (err) {
+      setError("Failed to add to cart. Please try again later.");
+      console.error(err);
+    }
   };
 
   if (error) {
@@ -123,7 +166,7 @@ const ProductDetail = () => {
                 <option value="" disabled>
                   Select size
                 </option>
-                {product.sizes?.map((size) => (
+                {sizes.map((size) => (
                   <option key={size} value={size}>
                     {size}
                   </option>

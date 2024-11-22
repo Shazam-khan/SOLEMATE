@@ -130,7 +130,8 @@ export const getProductCategory = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const category = await db.query("SELECT * FROM Category WHERE product_p_id = $1", 
+    const category = await db.query(
+      "SELECT * FROM Category WHERE product_p_id = $1",
       [id]
     );
 
@@ -379,7 +380,7 @@ export const getAllSizes = async (req, res) => {
 
   try {
     const sizes = await db.query(
-      `SELECT * FROM 'P_Size' WHERE product_id = $1`,
+      `SELECT * FROM "P_Size" WHERE product_id = $1`,
       [id]
     );
 
@@ -420,7 +421,7 @@ export const postSize = async (req, res) => {
   try {
     const sid = uuid();
     const input_val = await db.query(
-      `INSERT INTO 'P_Size' (id, size, stock, product_id) VALUES ($1,$2,$3,$4) RETURNING *`,
+      `INSERT INTO "P_Size" (id, size, stock, product_id) VALUES ($1,$2,$3,$4) RETURNING *`,
       [sid, size, stock, id]
     );
 
@@ -442,7 +443,7 @@ export const updateSizeInfo = async (req, res) => {
   const { stock, size } = req.body;
 
   try {
-    const existing = await db.query(`SELECT * FROM 'P_Size' WHERE id = $1`, [
+    const existing = await db.query(`SELECT * FROM "P_Size" WHERE id = $1`, [
       sId,
     ]);
 
@@ -450,7 +451,7 @@ export const updateSizeInfo = async (req, res) => {
     const updateStock = stock || existing.rows[0].stock;
 
     const updatedValue = await db.query(
-      `UPDATE 'P_Size' SET size = $1, stock = $2 WHERE id = $3 RETURNING *`,
+      `UPDATE "P_Size" SET size = $1, stock = $2 WHERE id = $3 RETURNING *`,
       [updateSize, updateStock, sId]
     );
 
@@ -471,7 +472,7 @@ export const deleteSieInfo = async (req, res) => {
   const { sId } = req.params;
 
   try {
-    await db.query(`DELETE FROM 'P_Size' WHERE id = $1`, [sId]);
+    await db.query(`DELETE FROM "P_Size" WHERE id = $1`, [sId]);
     res.status(204).json({
       message: "Record deleted successfully",
       Sizes: null,

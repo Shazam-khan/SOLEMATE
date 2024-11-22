@@ -44,7 +44,9 @@ export const userLogin = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Internal Server Error", error: true });
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", error: true });
   }
 };
 
@@ -73,8 +75,7 @@ export const userSignUp = async (req, res) => {
     // Validate password format
     if (!validatePassword(password)) {
       return res.status(400).json({
-        message:
-          "Password must be at least 8 characters long.",
+        message: "Password must be at least 8 characters long.",
         User: null,
         error: true,
       });
@@ -104,7 +105,7 @@ export const userSignUp = async (req, res) => {
     // Generate user ID
     const userId = uuid();
 
-    const admin = 'N';
+    const admin = "N";
     // Insert the user into the database
     const user = await db.query(
       'INSERT INTO "Users" (u_id, is_admin, first_name, last_name, email, password, phone_number) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',

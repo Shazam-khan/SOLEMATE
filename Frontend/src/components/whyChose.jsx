@@ -13,60 +13,59 @@ const WhyChose = () => {
         <div className="space-y-12 text-right">
           <div className="flex flex-col items-end" data-aos="zoom-in-up" data-aos-delay="0">
             <p className="text-2xl text-custom-brown bg-[#EBF3FE] w-14 h-14 flex justify-center items-center rounded-full">1</p>
-            <h3 className="text-xl font-semibold mt-4">Wide Selection</h3>
+            <h3 className="text-xl font-semibold mt-4">Vast Collection</h3>
             <p className="text-gray-500">
-              Mega Store offers a diverse range of gadgets, from smartphones to smart home devices, ensuring you find what you need to elevate your lifestyle and meet your tech requirements.
+              SoleMate offers a wide variety of footwear for every occasion, from casual sneakers to formal shoes, ensuring that you always find the perfect pair to match your style and needs.
             </p>
           </div>
 
           <div className="flex flex-col items-end" data-aos="zoom-in-up" data-aos-delay="300">
             <p className="text-2xl text-custom-brown bg-[#EBF3FE] w-14 h-14 flex justify-center items-center rounded-full">2</p>
-            <h3 className="text-xl font-semibold mt-4">Quality Assurance</h3>
+            <h3 className="text-xl font-semibold mt-4">Quality & Comfort</h3>
             <p className="text-gray-500">
-              Every gadget at Mega Store undergoes rigorous quality checks, guaranteeing reliability and performance, so you can shop with confidence knowing you're getting the best.
+              At SoleMate, we prioritize both comfort and quality. Each pair of shoes is carefully selected to offer the best materials and design, ensuring that you can walk comfortably all day long.
             </p>
           </div>
 
           <div className="flex flex-col items-end" data-aos="zoom-in-up" data-aos-delay="600">
             <p className="text-2xl text-custom-brown bg-[#EBF3FE] w-14 h-14 flex justify-center items-center rounded-full">3</p>
-            <h3 className="text-xl font-semibold mt-4">Competitive Prices</h3>
+            <h3 className="text-xl font-semibold mt-4">Dedicated Customer Service</h3>
             <p className="text-gray-500">
-              Enjoy great value with Mega Store's competitive prices on high-quality gadgets, making top-of-the-line technology accessible to all without compromising on quality or performance.
+              We’re committed to providing exceptional customer service. From helping you choose the perfect pair to assisting with returns and exchanges, our team ensures a smooth and satisfying shopping experience.
             </p>
           </div>
         </div>
 
         {/* Center Column */}
         <div className="relative flex justify-center items-center" data-aos="zoom-in" data-aos-delay="300">
-            <img src={ecompost} alt="Mega Store home page" className="z-10 relative" />
+            <img src={ecompost} alt="SoleMate footwear" className="z-10 relative" />
             <div className="absolute w-[25rem] h-[25rem] bg-custom-brown rounded-full z-0 animate-spin-slow"></div>
             <div className="absolute w-[28rem] h-[28rem] border-2 shadow rounded-full z-0"></div>
         </div>
-
 
         {/* Right Column */}
         <div className="space-y-12 pt-12">
           <div className="flex flex-col items-start" data-aos="zoom-in-up" data-aos-delay="0">
             <p className="text-2xl text-custom-brown bg-[#EBF3FE] w-14 h-14 flex justify-center items-center rounded-full">4</p>
-            <h3 className="text-xl font-semibold mt-4">Expert Guidance</h3>
+            <h3 className="text-xl font-semibold mt-4">Expert Recommendations</h3>
             <p className="text-gray-500">
-              Our knowledgeable staff provides expert guidance, helping you choose the right gadget to meet your needs and preferences, ensuring you make informed decisions every step of the way.
+              Our team of footwear experts is always available to help you find the perfect fit, providing personalized recommendations based on your style preferences and comfort needs.
             </p>
           </div>
 
           <div className="flex flex-col items-start" data-aos="zoom-in-up" data-aos-delay="300">
             <p className="text-2xl text-custom-brown bg-[#EBF3FE] w-14 h-14 flex justify-center items-center rounded-full">5</p>
-            <h3 className="text-xl font-semibold mt-4">Convenient Shopping</h3>
+            <h3 className="text-xl font-semibold mt-4">Convenient Online Shopping</h3>
             <p className="text-gray-500">
-              With Mega Store, shopping for gadgets is easy and convenient. Our user-friendly website and secure payment options ensure a seamless experience from browsing to checkout, all from the comfort of your home.
+              Shopping for shoes at SoleMate is easy and convenient. Browse our user-friendly website, order your favorite pairs with secure payment options, and have them delivered directly to your doorstep.
             </p>
           </div>
 
           <div className="flex flex-col items-start" data-aos="zoom-in-up" data-aos-delay="600">
             <p className="text-2xl text-custom-brown bg-[#EBF3FE] w-14 h-14 flex justify-center items-center rounded-full">6</p>
-            <h3 className="text-xl font-semibold mt-4">Excellent Service</h3>
+            <h3 className="text-xl font-semibold mt-4">Affordable Prices</h3>
             <p className="text-gray-500">
-              Mega Store is committed to providing excellent service to our customers. From prompt assistance with inquiries to efficient handling of orders and deliveries, we prioritize your satisfaction every step of the way.
+              SoleMate provides high-quality footwear at competitive prices, making sure that you don't have to compromise on style or comfort without breaking the bank.
             </p>
           </div>
         </div>
