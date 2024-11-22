@@ -12,6 +12,7 @@ import Admin from './components/Admin.jsx';
 import Dashboard from './components/dashboard.jsx';
 import Products from './components/Products.jsx';
 import ProductDetail from './components/ProductDetail.jsx'; // Import ProductDetail
+import { UserProvider } from './components/UserContext.jsx'; // Import the context provider
 
 const router = createBrowserRouter([
   {
@@ -31,12 +32,12 @@ const router = createBrowserRouter([
         element: <Products />,
       },
       {
-        path: '/products/:category', // Dynamic category path
-        element: <Products />, // Same Products component for category-based filtering
+        path: '/products/category/:category',
+        element: <Products />,
       },
       {
-        path: '/productDetail/:productId', // Dynamic product detail based on category
-        element: <ProductDetail />,
+        path: '/products/:productId',
+        element: <ProductDetail />,  // Now no need to pass userId directly
       },
       {
         path: '/contact',
@@ -60,6 +61,8 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <UserProvider> {/* Wrap app with UserProvider */}
+      <RouterProvider router={router} />
+    </UserProvider>
   </StrictMode>
 );

@@ -96,7 +96,7 @@ function Products() {
       );
       if (categoryResponse.status === 200) {
         const categoryName = categoryResponse.data.Category[0].c_name;
-        navigate(`/productDetail/${productId}`);
+        navigate(`/products/${productId}`);
       }
     } catch (err) {
       console.error("Failed to navigate to product details:", err);

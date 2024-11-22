@@ -1,51 +1,52 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
+import { useUser } from "./UserContext.jsx"; // Import the UserContext
 
-const ProductDetail = ({ userId }) => {
+const ProductDetail = () => {
+  // Access the userId from the UserContext
+  const { userId } = useUser();
+
+  // Guard clause to prevent rendering before userId is available
+  if (!userId) {
+    console.error("User ID is undefined!");
+    return <p className="text-red-600">Please log in to view the product details.</p>;
+  }
+
   const { productId } = useParams();
-
   const [product, setProduct] = useState(null);
   const [category, setCategory] = useState(null);
   const [images, setImages] = useState([]);
-  const [sizes, setSizes] = useState([]); // Updated state to hold sizes
+  const [sizes, setSizes] = useState([]);
   const [selectedSize, setSelectedSize] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [error, setError] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Fetch product details and images
+  // Fetch product details and related data
   const fetchProductDetails = async () => {
     try {
-      const productResponse = await axios.get(
-        `http://localhost:5000/api/products/${productId}`
-      );
-      if (productResponse.status === 200) {
-        setProduct(productResponse.data.Product);
+      const [productRes, imagesRes, categoryRes, sizesRes] = await Promise.all([
+        axios.get(`http://localhost:5000/api/products/${productId}`),
+        axios.get(`http://localhost:5000/api/products/${productId}/images`),
+        axios.get(`http://localhost:5000/api/products/${productId}/category`),
+        axios.get(`http://localhost:5000/api/products/${productId}/size`),
+      ]);
+
+      if (productRes.status === 200) {
+        setProduct(productRes.data.Product);
       }
 
-      const imagesResponse = await axios.get(
-        `http://localhost:5000/api/products/${productId}/images`
-      );
-      if (imagesResponse.status === 200) {
-        setImages(imagesResponse.data.Images.map((img) => img.image_url));
+      if (imagesRes.status === 200) {
+        setImages(imagesRes.data.Images.map((img) => img.image_url));
       }
 
-      // Fetch category info
-      const categoryResponse = await axios.get(
-        `http://localhost:5000/api/products/${productId}/category`
-      );
-      if (categoryResponse.status === 200) {
-        const categoryData = categoryResponse.data.Category[0];
-        setCategory(categoryData);
+      if (categoryRes.status === 200) {
+        setCategory(categoryRes.data.Category[0]);
       }
 
-      // Fetch sizes for the product
-      const sizesResponse = await axios.get(
-        `http://localhost:5000/api/products/${productId}/size`
-      );
-      if (sizesResponse.status === 200) {
-        setSizes(sizesResponse.data.Sizes.map((size) => size.size));
+      if (sizesRes.status === 200) {
+        setSizes(sizesRes.data.Sizes.map((size) => size.size));
       }
     } catch (err) {
       setError("Failed to fetch product details. Please try again later.");
@@ -53,6 +54,10 @@ const ProductDetail = ({ userId }) => {
   };
 
   useEffect(() => {
+    if (!productId) {
+      setError("Invalid product ID. Please check the URL.");
+      return;
+    }
     fetchProductDetails();
   }, [productId]);
 
@@ -63,28 +68,22 @@ const ProductDetail = ({ userId }) => {
     }
 
     try {
-      // Check if the order exists for the user
-      let orderResponse = await axios.get(
+      const orderRes = await axios.get(
         `http://localhost:5000/api/users/${userId}/order`
       );
 
       let orderId;
-      if (orderResponse.status === 200 && orderResponse.data.Orders.length > 0) {
-        // Use the existing order
-        orderId = orderResponse.data.Orders[0].o_id;
+      if (orderRes.status === 200 && orderRes.data.Orders.length > 0) {
+        orderId = orderRes.data.Orders[0].o_id;
       } else {
-        // Create a new order
-        const createOrderResponse = await axios.post(
-          `http://localhost:5000/api/order`,
-          {
-            user_id: userId, // User ID should be passed here
-          }
+        const createOrderRes = await axios.post(
+          `http://localhost:5000/api/users/${userId}/order`,
+          { user_id: userId }
         );
-        orderId = createOrderResponse.data.Order.o_id;
+        orderId = createOrderRes.data.Order.o_id;
       }
 
-      // Now, create or update the order details
-      const createOrderDetailResponse = await axios.post(
+      await axios.post(
         `http://localhost:5000/api/users/${userId}/order/${orderId}/order_details`,
         {
           quantity,
@@ -93,15 +92,14 @@ const ProductDetail = ({ userId }) => {
         }
       );
 
-      if (createOrderDetailResponse.status === 201) {
-        console.log("Order detail created/updated successfully");
-      }
+      alert("Item added to cart successfully!");
     } catch (err) {
       setError("Failed to add to cart. Please try again later.");
       console.error(err);
     }
   };
 
+  // Handle loading and errors
   if (error) {
     return <p className="text-red-600">{error}</p>;
   }
@@ -116,7 +114,6 @@ const ProductDetail = ({ userId }) => {
         <div className="grid md:grid-cols-2 gap-8">
           {/* Image Carousel with Thumbnails */}
           <div className="relative flex">
-            {/* Thumbnails */}
             <div className="flex flex-col space-y-2 mr-4">
               {images.map((img, index) => (
                 <img
@@ -130,8 +127,6 @@ const ProductDetail = ({ userId }) => {
                 />
               ))}
             </div>
-
-            {/* Main Image */}
             <div className="relative w-full h-[400px] group">
               <div
                 style={{
@@ -175,28 +170,26 @@ const ProductDetail = ({ userId }) => {
             </div>
 
             {/* Quantity Selector */}
-            <div>
-              <div className="flex items-center space-x-2">
-                <label className="mr-4">Quantity:</label>
-                <button
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="p-2 border rounded-md border-gray-500"
-                >
-                  -
-                </button>
-                <input
-                  type="number"
-                  value={quantity}
-                  readOnly
-                  className="w-16 h-10 text-center border rounded-md border-gray-500"
-                />
-                <button
-                  onClick={() => setQuantity((q) => q + 1)}
-                  className="p-2 border rounded-md border-gray-500"
-                >
-                  +
-                </button>
-              </div>
+            <div className="flex items-center space-x-2">
+              <label className="mr-4">Quantity:</label>
+              <button
+                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                className="p-2 border rounded-md border-gray-500"
+              >
+                -
+              </button>
+              <input
+                type="number"
+                value={quantity}
+                readOnly
+                className="w-16 h-10 text-center border rounded-md border-gray-500"
+              />
+              <button
+                onClick={() => setQuantity((q) => q + 1)}
+                className="p-2 border rounded-md border-gray-500"
+              >
+                +
+              </button>
             </div>
 
             {/* Add to Cart */}

@@ -3,6 +3,7 @@ import "./Signup.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGooglePlusG, faFacebookF, faGithub, faLinkedinIn } from "@fortawesome/free-brands-svg-icons";
 import ProductDetail from "./ProductDetail";
+import { useUser } from "./UserContext.jsx";
 
 const Modal = () => {
     const [isModalOpen, setIsModalOpen] = useState(true); // Modal visibility state
@@ -23,7 +24,8 @@ const Modal = () => {
     });
 
     const [error, setError] = useState("");
-    const [userId, setUserId] = useState(null); // Store user ID after login/signup
+    // Access user context
+    const { userId, login, logout } = useUser();
 
     // Validation functions
     const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -92,7 +94,7 @@ const Modal = () => {
             if (result.error) {
                 setError(result.message);
             } else {
-                setUserId(result.User.u_id); // Save the userId here
+                login(result.User.u_id); // Save the userId here
                 alert("Signup successful!");
                 setIsModalOpen(false);
             }
@@ -132,7 +134,7 @@ const Modal = () => {
             if (result.error) {
                 setError(result.message);
             } else {
-                setUserId(result.User.u_id); // Save the userId here
+                login(result.User.u_id);
                 alert("Login successful!");
                 setIsModalOpen(false);
             }
@@ -276,8 +278,13 @@ const Modal = () => {
                     </div>
                 </div>
 
-                {/* Pass userId to ProductDetail component */}
-                {userId && <ProductDetail userId={userId} />}
+                {/* Render ProductDetail only if userId is set */}
+                {userId ? (
+                    <ProductDetail userId={userId} />
+                ) : (
+                    <p>Loading user information...</p>
+                )}
+
             </div>
         </div>
     );
