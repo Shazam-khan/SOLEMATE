@@ -4,14 +4,7 @@ import axios from "axios";
 import { useUser } from "./UserContext.jsx"; // Import the UserContext
 
 const ProductDetail = () => {
-  // Access the userId from the UserContext
-  const { userId } = useUser();
-
-  // Guard clause to prevent rendering before userId is available
-  if (!userId) {
-    console.error("User ID is undefined!");
-    return <p className="text-red-600">Please log in to view the product details.</p>;
-  }
+  const { userId } = useUser(); // Access userId from UserContext
 
   const { productId } = useParams();
   const [product, setProduct] = useState(null);
@@ -21,11 +14,13 @@ const ProductDetail = () => {
   const [selectedSize, setSelectedSize] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Fetch product details and related data
+  // Fetch product details
   const fetchProductDetails = async () => {
     try {
+      setLoading(true);
       const [productRes, imagesRes, categoryRes, sizesRes] = await Promise.all([
         axios.get(`http://localhost:5000/api/products/${productId}`),
         axios.get(`http://localhost:5000/api/products/${productId}/images`),
@@ -36,20 +31,20 @@ const ProductDetail = () => {
       if (productRes.status === 200) {
         setProduct(productRes.data.Product);
       }
-
       if (imagesRes.status === 200) {
-        setImages(imagesRes.data.Images.map((img) => img.image_url));
+        setImages(imagesRes.data.Images.map((img) => img.image_url || "/placeholder.svg"));
       }
-
       if (categoryRes.status === 200) {
         setCategory(categoryRes.data.Category[0]);
       }
-
       if (sizesRes.status === 200) {
         setSizes(sizesRes.data.Sizes.map((size) => size.size));
       }
     } catch (err) {
+      console.error(err);
       setError("Failed to fetch product details. Please try again later.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -68,57 +63,57 @@ const ProductDetail = () => {
     }
 
     try {
-      const orderRes = await axios.get(
-        `http://localhost:5000/api/users/${userId}/order`
-      );
+      const orderDate = new Date().toISOString();
+      const promisedDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      const address = "Default Address, Update Later";
 
-      let orderId;
-      if (orderRes.status === 200 && orderRes.data.Orders.length > 0) {
-        orderId = orderRes.data.Orders[0].o_id;
-      } else {
-        const createOrderRes = await axios.post(
-          `http://localhost:5000/api/users/${userId}/order`,
-          { user_id: userId }
-        );
-        orderId = createOrderRes.data.Order.o_id;
+      // Fetch existing order or create a new one
+      const orderRes = await axios.get(`http://localhost:5000/api/users/${userId}/order`);
+      let orderId = orderRes.data.Orders?.[0]?.o_id;
+
+      if (!orderId) {
+        const newOrderRes = await axios.post(`http://localhost:5000/api/users/${userId}/order`, {
+          orderDate,
+          promisedDate,
+          address,
+        });
+        orderId = newOrderRes.data.Orders.o_id;
       }
 
-      await axios.post(
-        `http://localhost:5000/api/users/${userId}/order/${orderId}/order_details`,
-        {
-          quantity,
-          p_id: productId,
-          size: selectedSize,
-        }
-      );
+      // Add order details
+      await axios.post(`http://localhost:5000/api/order/${orderId}/order_details`, {
+        quantity,
+        p_id: productId,
+        size: selectedSize,
+      });
 
       alert("Item added to cart successfully!");
     } catch (err) {
-      setError("Failed to add to cart. Please try again later.");
       console.error(err);
+      setError("Failed to add to cart. Please try again later.");
     }
   };
 
-  // Handle loading and errors
+  // Render Error or Loading State
+  if (loading) {
+    return <p>Loading product details...</p>;
+  }
   if (error) {
     return <p className="text-red-600">{error}</p>;
   }
 
-  if (!product) {
-    return <p>Loading product details...</p>;
-  }
-
+  // Render Product Details
   return (
     <section className="py-12 bg-white sm:py-16 lg:py-20">
       <div className="px-4 py-16 mx-auto sm:px-6 lg:px-8 max-w-7xl">
         <div className="grid md:grid-cols-2 gap-8">
-          {/* Image Carousel with Thumbnails */}
+          {/* Image Carousel */}
           <div className="relative flex">
             <div className="flex flex-col space-y-2 mr-4">
               {images.map((img, index) => (
                 <img
                   key={index}
-                  src={img || "/placeholder.svg"}
+                  src={img}
                   alt={`Thumbnail ${index + 1}`}
                   className={`w-20 h-20 object-cover cursor-pointer border rounded-md ${
                     currentIndex === index ? "border-blue-500" : "border-gray-300"
@@ -139,15 +134,12 @@ const ProductDetail = () => {
 
           {/* Product Details */}
           <div className="space-y-4 border-l-2 border-gray-300 pl-12 ml-8">
-            <h1 className="text-3xl font-bold">{product.p_name || "Product Name"}</h1>
+            <h1 className="text-3xl font-bold">{product?.p_name || "Product Name"}</h1>
             <p className="text-xl">Type: {category?.c_name || "Unknown"}</p>
             <p className="text-lg">Description: {category?.description || "No description available."}</p>
-            <p className="text-xl">Brand: {product.brand || "Unknown"}</p>
+            <p className="text-xl">Brand: {product?.brand || "Unknown"}</p>
             <p className="text-xl">
-              Price:
-              <label className="ml-4 text-2xl font-semibold">
-                ${product.price ? product.price.toFixed(2) : "0.00"}
-              </label>
+              Price: <span className="text-2xl font-semibold">${product?.price?.toFixed(2) || "0.00"}</span>
             </p>
 
             {/* Size Selector */}

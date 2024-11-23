@@ -11,18 +11,21 @@ import orderDetailRouter from "./orderDetailRoutes.js";
 
 const orderRouter = express.Router({ mergeParams: true });
 
-// Order routes
-orderRouter.get("/", getAllOrders);
-orderRouter.post("/", createOrder);
-
-// Update to use 'orderId' for clarity
+// Middleware to verify orderId when present
 orderRouter.param("orderId", verifyOrderId);
 
-orderRouter.get("/:orderId", getOrderById);
-orderRouter.put("/:orderId", patchOrder);
-orderRouter.delete("/:orderId", deleteOrder);
+// Routes for managing orders
+orderRouter.get("/", getAllOrders); // Fetch all orders or filter by userId
+orderRouter.post("/", createOrder); // Create a new order
+orderRouter.get("/:orderId", getOrderById); // Get order by orderId
+orderRouter.put("/:orderId", patchOrder); // Update an order
+orderRouter.delete("/:orderId", deleteOrder); // Delete an order
 
-// Nested order detail routes
+// Nested routes for order details
 orderRouter.use("/:orderId/order_details", orderDetailRouter);
 
-export default orderRouter;
+// Integrate orderRouter into user-specific routes
+const userRouter = express.Router();
+userRouter.use("/:userId/order", orderRouter); // Prefix order routes with user context
+
+export default userRouter;
