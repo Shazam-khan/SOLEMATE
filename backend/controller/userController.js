@@ -28,20 +28,9 @@ export const getUserById = async (req, res) => {
 
 export const updateInfo = async (req, res) => {
   const { fname, lname, email, password, phoneNumber } = req.body;
-  const { id } = req.params;
+  const { userId } = req.params;
 
   try {
-    const existingUser = await db.query(
-      'SELECT * FROM "Users" WHERE u_id = $1',
-      [id]
-    );
-
-    if (existingUser.rows.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "User not found", User: null, error: true });
-    }
-
     const updatedFname = fname || existingUser.rows[0].first_name;
     const updatedLname = lname || existingUser.rows[0].last_name;
     const updatedEmail = email || existingUser.rows[0].email;
@@ -68,7 +57,7 @@ export const updateInfo = async (req, res) => {
       updatedEmail,
       updatedPassword,
       updatedPhoneNumber,
-      id,
+      userId,
     ]);
 
     return res.status(200).json({
@@ -85,16 +74,15 @@ export const updateInfo = async (req, res) => {
 };
 
 export const deleteUser = async (req, res) => {
-  const id = req.params.id;
+  const { userId } = req.params;
   try {
-    await db.query('DELETE FROM "Users" WHERE u_id = $1', [id]);
+    await db.query('DELETE FROM "Users" WHERE u_id = $1', [userId]);
     return res.status(204).json({
       message: "User deleted successfully",
       Users: null,
       error: false,
     });
   } catch (error) {
-    console.error(error);
     console.error(error);
     return res
       .status(500)

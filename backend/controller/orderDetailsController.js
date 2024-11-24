@@ -34,8 +34,8 @@ export const getOrderDetailById = async (req, res) => {
 };
 
 export const createOrderDetail = async (req, res) => {
-  const { id, orderId } = req.params; // Extract user id and order id (oId might be undefined)
-  const { quantity, p_id, size } = req.body;
+  const { orderId } = req.params; // Extract user id and order id (oId might be undefined)
+  const { quantity, p_id, size, userId } = req.body;
 
   try {
     // Check if product exists
@@ -73,7 +73,7 @@ export const createOrderDetail = async (req, res) => {
     const result = await db.query(
       `INSERT INTO order_details (od_id, quantity, od_price, product_p_id, order_o_id, user_id,size) 
        VALUES ($1, $2, $3, $4, $5, $6,$7) RETURNING *`,
-      [odId, quantity, odPrice, p_id, orderId, id, size]
+      [odId, quantity, odPrice, p_id, orderId, userId, size]
     );
 
     const newOrderDetail = result.rows[0];

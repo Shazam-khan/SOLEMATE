@@ -32,7 +32,11 @@ const ProductDetail = () => {
         setProduct(productRes.data.Product);
       }
       if (imagesRes.status === 200) {
-        setImages(imagesRes.data.Images.map((img) => img.image_url || "/placeholder.svg"));
+        setImages(
+          imagesRes.data.Images.map(
+            (img) => img.image_url || "/placeholder.svg"
+          )
+        );
       }
       if (categoryRes.status === 200) {
         setCategory(categoryRes.data.Category[0]);
@@ -51,46 +55,47 @@ const ProductDetail = () => {
   useEffect(() => {
     if (!productId) {
       setError("Invalid product ID. Please check the URL.");
+      setLoading(false); // Stop loading if no productId
       return;
     }
     fetchProductDetails();
   }, [productId]);
 
-  const handleAddToCart = async () => {
-    if (!selectedSize) {
-      alert("Please select a size before adding to cart.");
-      return;
-    }
+  // Render Error or Loading State
+  if (loading) {
+    return <p>Loading product details...</p>;
+  }
 
+  if (error) {
+    return <p className="text-red-600">{error}</p>;
+  }
+  const handleAddToCart = async () => {
     try {
       const orderDate = new Date().toISOString();
-      const promisedDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      const promisedDate = new Date(
+        Date.now() + 7 * 24 * 60 * 60 * 1000
+      ).toISOString();
       const address = "Default Address, Update Later";
 
-      // Fetch existing order or create a new one
-      const orderRes = await axios.get(`http://localhost:5000/api/users/${userId}/order`);
-      let orderId = orderRes.data.Orders?.[0]?.o_id;
-
-      if (!orderId) {
-        const newOrderRes = await axios.post(`http://localhost:5000/api/users/${userId}/order`, {
+      const response = await axios.post(
+        `http://localhost:5000/api/users/${userId}/order`,
+        {
           orderDate,
           promisedDate,
           address,
-        });
-        orderId = newOrderRes.data.Orders.o_id;
-      }
+          quantity,
+          p_id: productId,
+          size: selectedSize,
+          user_id: userId,
+        }
+      );
 
-      // Add order details
-      await axios.post(`http://localhost:5000/api/order/${orderId}/order_details`, {
-        quantity,
-        p_id: productId,
-        size: selectedSize,
-      });
-
+      const orderId = response.data.orderId;
       alert("Item added to cart successfully!");
+      window.location.href = `http://localhost:5000/api/users/${userId}/order_details`;
     } catch (err) {
       console.error(err);
-      setError("Failed to add to cart. Please try again later.");
+      alert("Failed to add item to cart. Please try again.");
     }
   };
 
@@ -116,7 +121,9 @@ const ProductDetail = () => {
                   src={img}
                   alt={`Thumbnail ${index + 1}`}
                   className={`w-20 h-20 object-cover cursor-pointer border rounded-md ${
-                    currentIndex === index ? "border-blue-500" : "border-gray-300"
+                    currentIndex === index
+                      ? "border-blue-500"
+                      : "border-gray-300"
                   }`}
                   onClick={() => setCurrentIndex(index)}
                 />
@@ -125,7 +132,9 @@ const ProductDetail = () => {
             <div className="relative w-full h-[400px] group">
               <div
                 style={{
-                  backgroundImage: `url(${images[currentIndex] || "/placeholder.svg"})`,
+                  backgroundImage: `url(${
+                    images[currentIndex] || "/placeholder.svg"
+                  })`,
                 }}
                 className="w-full h-full bg-center bg-cover duration-500 rounded-md shadow-lg"
               ></div>
@@ -134,12 +143,20 @@ const ProductDetail = () => {
 
           {/* Product Details */}
           <div className="space-y-4 border-l-2 border-gray-300 pl-12 ml-8">
-            <h1 className="text-3xl font-bold">{product?.p_name || "Product Name"}</h1>
+            <h1 className="text-3xl font-bold">
+              {product?.p_name || "Product Name"}
+            </h1>
             <p className="text-xl">Type: {category?.c_name || "Unknown"}</p>
-            <p className="text-lg">Description: {category?.description || "No description available."}</p>
+            <p className="text-lg">
+              Description:{" "}
+              {category?.description || "No description available."}
+            </p>
             <p className="text-xl">Brand: {product?.brand || "Unknown"}</p>
             <p className="text-xl">
-              Price: <span className="text-2xl font-semibold">${product?.price?.toFixed(2) || "0.00"}</span>
+              Price:{" "}
+              <span className="text-2xl font-semibold">
+                ${product?.price?.toFixed(2) || "0.00"}
+              </span>
             </p>
 
             {/* Size Selector */}

@@ -24,8 +24,4 @@ orderRouter.delete("/:orderId", deleteOrder); // Delete an order
 // Nested routes for order details
 orderRouter.use("/:orderId/order_details", orderDetailRouter);
 
-// Integrate orderRouter into user-specific routes
-const userRouter = express.Router();
-userRouter.use("/:userId/order", orderRouter); // Prefix order routes with user context
-
-export default userRouter;
+export default orderRouter;
