@@ -7,6 +7,8 @@ import cookieParser from "cookie-parser";
 import productRouter from "./routes/productRoutes.js";
 import userRouter from "./routes/userRoutes.js";
 import authRouter from "./routes/authRoutes.js";
+import { authenticateUser } from "./middleware/authenticateUser.js";
+import paymentRouter from "./routes/paymentRoutes.js";
 const app = express();
 
 app.use(express.json());

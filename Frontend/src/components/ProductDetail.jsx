@@ -1,18 +1,21 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useUser } from "./UserContext.jsx"; // Import the UserContext
+import { useUser } from "./UserContext.jsx";
+import ReactLoading from "react-loading"; // Import ReactLoading
 
 const ProductDetail = () => {
   const { userId } = useUser(); // Access userId from UserContext
-
   const { productId } = useParams();
+  const navigate = useNavigate();
+
   const [product, setProduct] = useState(null);
   const [category, setCategory] = useState(null);
   const [images, setImages] = useState([]);
   const [sizes, setSizes] = useState([]);
   const [selectedSize, setSelectedSize] = useState("");
   const [quantity, setQuantity] = useState(1);
+  const [orderId, setOrderId] = useState(null); // Track current order ID
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -28,22 +31,12 @@ const ProductDetail = () => {
         axios.get(`http://localhost:5000/api/products/${productId}/size`),
       ]);
 
-      if (productRes.status === 200) {
-        setProduct(productRes.data.Product);
-      }
-      if (imagesRes.status === 200) {
-        setImages(
-          imagesRes.data.Images.map(
-            (img) => img.image_url || "/placeholder.svg"
-          )
-        );
-      }
-      if (categoryRes.status === 200) {
-        setCategory(categoryRes.data.Category[0]);
-      }
-      if (sizesRes.status === 200) {
-        setSizes(sizesRes.data.Sizes.map((size) => size.size));
-      }
+      setProduct(productRes.data.Product);
+      setImages(
+        imagesRes.data.Images.map((img) => img.image_url || "/placeholder.svg")
+      );
+      setCategory(categoryRes.data.Category[0]);
+      setSizes(sizesRes.data.Sizes.map((size) => size.size));
     } catch (err) {
       console.error(err);
       setError("Failed to fetch product details. Please try again later.");
@@ -52,62 +45,104 @@ const ProductDetail = () => {
     }
   };
 
-  useEffect(() => {
-    if (!productId) {
-      setError("Invalid product ID. Please check the URL.");
-      setLoading(false); // Stop loading if no productId
-      return;
-    }
-    fetchProductDetails();
-  }, [productId]);
-
-  // Render Error or Loading State
-  if (loading) {
-    return <p>Loading product details...</p>;
-  }
-
-  if (error) {
-    return <p className="text-red-600">{error}</p>;
-  }
-  const handleAddToCart = async () => {
+  // Fetch existing order ID for the user
+  const fetchOrderId = async () => {
     try {
-      const orderDate = new Date().toISOString();
-      const promisedDate = new Date(
-        Date.now() + 7 * 24 * 60 * 60 * 1000
-      ).toISOString();
-      const address = "Default Address, Update Later";
-
-      const response = await axios.post(
-        `http://localhost:5000/api/users/${userId}/order`,
-        {
-          orderDate,
-          promisedDate,
-          address,
-          quantity,
-          p_id: productId,
-          size: selectedSize,
-          user_id: userId,
-        }
+      const response = await axios.get(
+        `http://localhost:5000/api/users/${userId}/order/current`,
+        { withCredentials: true }
       );
-
-      const orderId = response.data.orderId;
-      alert("Item added to cart successfully!");
-      window.location.href = `http://localhost:5000/api/users/${userId}/order_details`;
+      setOrderId(response.data.Orders.o_id); // Save the current order ID
     } catch (err) {
-      console.error(err);
-      alert("Failed to add item to cart. Please try again.");
+      if (err.response?.status === 404) {
+        console.log("No current order found. A new order will be created.");
+        setOrderId(null); // No current order
+      } else {
+        console.error("Failed to fetch current order ID:", err);
+        setError("Error fetching current order. Please try again.");
+      }
     }
   };
 
-  // Render Error or Loading State
-  if (loading) {
-    return <p>Loading product details...</p>;
-  }
-  if (error) {
-    return <p className="text-red-600">{error}</p>;
-  }
+  useEffect(() => {
+    if (!productId) {
+      setError("Invalid product ID. Please check the URL.");
+      setLoading(false);
+      return;
+    }
+    fetchProductDetails();
+    if (userId) fetchOrderId(); // Fetch current order ID if user is logged in
+  }, [productId, userId]);
 
-  // Render Product Details
+  const handleAddToCart = async () => {
+    if (!userId) {
+      alert("Please log in to add items to the cart.");
+      return;
+    }
+
+    if (!selectedSize) {
+      alert("Please select a size before adding to the cart.");
+      return;
+    }
+
+    try {
+      if (orderId) {
+        // Add to existing order
+        const response = await axios.post(
+          `http://localhost:5000/api/users/${userId}/order/${orderId}/order_details`,
+          {
+            quantity,
+            p_id: productId,
+            size: selectedSize,
+            userId,
+          },
+          { withCredentials: true }
+        );
+        alert("Item added to your cart!");
+      } else {
+        // Create a new order and add item
+        const orderDate = new Date().toISOString();
+        const promisedDate = new Date(
+          Date.now() + 7 * 24 * 60 * 60 * 1000
+        ).toISOString();
+        const address = "Default Address, Update Later";
+
+        const response = await axios.post(
+          `http://localhost:5000/api/users/${userId}/order`,
+          {
+            orderDate,
+            promisedDate,
+            address,
+            quantity,
+            p_id: productId,
+            size: selectedSize,
+          },
+          { withCredentials: true }
+        );
+
+        const newOrderId = response.data.Orders.o_id;
+        setOrderId(newOrderId); // Save new order ID
+        alert("Order created and item added to your cart!");
+      }
+
+      //navigate(`/users/${userId}/cart`); // Redirect to cart page
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || "Failed to add item to cart.");
+    }
+  };
+
+  // Render Loading Indicator
+  if (loading)
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <ReactLoading type="spin" color="custom-brown-light" height={50} width={50} />
+      </div>
+    );
+
+  // Render Error 
+  if (error) return <p className="text-red-600">{error}</p>;
+
   return (
     <section className="py-12 bg-white sm:py-16 lg:py-20">
       <div className="px-4 py-16 mx-auto sm:px-6 lg:px-8 max-w-7xl">

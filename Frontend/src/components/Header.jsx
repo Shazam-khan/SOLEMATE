@@ -3,10 +3,13 @@ import { Link, NavLink } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCartShopping, faUserPlus } from "@fortawesome/free-solid-svg-icons";
 import Signup from "./Signup";
+import { useUser } from "./UserContext"; // Import your UserContext
+
 
 function Header() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
+    const { userId } = useUser(); // Get userId from context
 
     const openModal = () => {
         setIsModalOpen(true);
@@ -52,7 +55,7 @@ function Header() {
                         </Link>
                         <div className="flex px-2 items-center lg:order-2 space-x-2">
                             <Link
-                                to="/cart"
+                                to={`/users/${userId}/cart`}
                                 className="text-black border-2 border-transparent hover:text-white hover:bg-custom-brown hover:border-custom-brown hover:border-2 font-medium rounded-lg text-sm px-4 lg:px-5 py-2 lg:py-2.5 mr-2 focus:outline-none"
                             >
                                 <FontAwesomeIcon icon={faCartShopping} />

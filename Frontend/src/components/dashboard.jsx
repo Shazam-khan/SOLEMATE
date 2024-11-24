@@ -60,19 +60,9 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
-
-      <button
-        onClick={() => {
-          setEditingProduct(null); // Reset editing product
-          setIsDialogOpen(true); // Open dialog
-        }}
-        className="bg-green-500 text-white px-4 py-2 rounded mb-6"
-      >
-        Add New Product
-      </button>
-
+    <div className="py-12 mt-12 bg-white sm:py-16 lg:py-20">
+      <h1 className="text-2xl text-center font-bold mb-6">Admin Dashboard</h1>
+      <div className="w-[80%] py-12 text-center mx-auto sm:px-6 lg:px-8 max-w-7xl">
       <table className="w-full border-collapse border">
         <thead>
           <tr className="bg-gray-100">
@@ -86,10 +76,10 @@ const AdminDashboard = () => {
           {products && products.length > 0 ? (
             products.map((product) => (
               <tr key={product.p_id} className="border-b">
-                <td className="py-2 px-4">{product.p_name}</td>
-                <td className="py-2 px-4">{product.brand}</td>
-                <td className="py-2 px-4">${product.price}</td>
-                <td className="py-2 px-4">
+                <td className="py-2 px-4 text-center">{product.p_name}</td>
+                <td className="py-2 px-4 text-center">{product.brand}</td>
+                <td className="py-2 px-4 text-center">${product.price}</td>
+                <td className="py-2 px-4 text-center">
                   <button
                     onClick={() => {
                       setEditingProduct(product);
@@ -118,6 +108,16 @@ const AdminDashboard = () => {
         </tbody>
       </table>
 
+      <button
+        onClick={() => {
+          setEditingProduct(null); // Reset editing product
+          setIsDialogOpen(true); // Open dialog
+        }}
+        className="w-48 p-3 mt-8 bg-custom-brown text-white rounded-md hover:border-2 hover:border-custom-brown hover:text-custom-brown hover:bg-transparent"
+      >
+        Add New Product
+      </button>
+      </div>
       {isDialogOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
           <div className="bg-white p-6 rounded shadow-lg w-96">

@@ -36,7 +36,8 @@ export const userLogin = async (req, res) => {
 
     const user = result.rows[0];
 
-    generateTokenSetCookie(res, user.u_id, user.is_admin);
+    const token = generateTokenSetCookie(res, user.u_id, user.is_admin);
+    console.log(token);
     return res.status(200).json({
       message: "User logged in successfully",
       User: { ...user, password: null },

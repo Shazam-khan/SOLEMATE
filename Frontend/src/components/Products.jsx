@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
+import ReactLoading from "react-loading"; // Import react-loading
 
 const API_URL = "http://localhost:5000/api/products"; // Base API URL
 const IMAGE_URL = "http://localhost:5000/api/products"; // Base URL for product images
 
 function Products() {
   const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false); // Loading state
   const [error, setError] = useState("");
   const { category } = useParams(); // Extract category from URL
   const navigate = useNavigate();
@@ -14,6 +16,7 @@ function Products() {
   // Fetch all products or products by category
   const fetchProducts = async () => {
     setError("");
+    setLoading(true); // Set loading to true before fetching
     try {
       const response = await axios.get(API_URL);
       if (response.status === 200) {
@@ -34,6 +37,8 @@ function Products() {
       }
     } catch (err) {
       setError("Failed to fetch products. Please try again later.");
+    } finally {
+      setLoading(false); // Set loading to false after fetching
     }
   };
 
@@ -64,7 +69,6 @@ function Products() {
 
   // Filter products by category
   const filterProductsByCategory = async (products, categoryName) => {
-    // Filter only the products whose category matches the given category name
     const filteredProducts = await Promise.all(
       products.map(async (product) => {
         try {
@@ -90,7 +94,6 @@ function Products() {
   // Navigate to product details page
   const handleProductClick = async (productId) => {
     try {
-      // Fetch the category for the clicked product
       const categoryResponse = await axios.get(
         `${API_URL}/${productId}/category`
       );
@@ -118,43 +121,55 @@ function Products() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-2 gap-6 mt-10 lg:mt-16 lg:gap-4 lg:grid-cols-4">
-          {error && (
-            <p className="text-red-600 text-sm text-center mb-4">{error}</p>
-          )}
+        {/* Show loading spinner while data is being fetched */}
+        {loading ? (
+          <div className="flex justify-center items-center h-[50vh]">
+            <ReactLoading
+              type="spin"
+              color= "custom-brown"
+              height={64}
+              width={64}
+            />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-6 mt-10 lg:mt-16 lg:gap-4 lg:grid-cols-4">
+            {error && (
+              <p className="text-red-600 text-sm text-center mb-4">{error}</p>
+            )}
 
-          {products.length > 0 ? (
-            products.map((product) => (
-              <div
-                key={product.p_id}
-                className="relative group"
-                onClick={() => handleProductClick(product.p_id)}
-              >
-                <div className="overflow-hidden relative aspect-w-1 aspect-h-1">
-                  <img
-                    className="object-cover w-full h-full transition-all duration-300 group-hover:scale-110"
-                    src={product.imageUrl}
-                    alt={product.p_name}
-                  />
-                </div>
-                <div className="flex items-start justify-between mt-4 space-x-4">
-                  <div>
-                    <h3 className="text-xs font-bold text-gray-900 sm:text-sm md:text-base">
-                      {product.p_name}
-                    </h3>
+            {products.length > 0 ? (
+              products.map((product) => (
+                <div
+                  key={product.p_id}
+                  className="relative group"
+                  onClick={() => handleProductClick(product.p_id)}
+                >
+                  <div className="overflow-hidden relative aspect-w-1 aspect-h-1">
+                    <img
+                      className="object-cover w-full h-[350px] transition-all duration-300 group-hover:scale-110"
+                      src={product.imageUrl}
+                      alt={product.p_name}
+                    />
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs font-bold text-gray-900 sm:text-sm md:text-base">
-                      ${product.price}
-                    </p>
+                  <div className="flex items-start justify-between mt-4 mx-2 space-x-4">
+                    <div>
+                      <h3 className="text-xs font-bold text-gray-900 sm:text-sm md:text-base">
+                        {product.p_name}
+                      </h3>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-bold text-gray-900 sm:text-sm md:text-base">
+                        ${product.price}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
-          ) : (
-            <p className="text-center text-gray-600">No products found.</p>
-          )}
-        </div>
+              ))
+            ) : (
+              <p className="text-center text-gray-600">No products found.</p>
+            )}
+          </div>
+        )}
       </div>
     </section>
   );

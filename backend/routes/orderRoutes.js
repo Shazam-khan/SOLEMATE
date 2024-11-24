@@ -1,3 +1,4 @@
+// orderRoutes.js
 import express from "express";
 import {
   getAllOrders,
@@ -5,21 +6,20 @@ import {
   createOrder,
   patchOrder,
   deleteOrder,
+  getCurrentOrder, // Import this
 } from "../controller/orderController.js";
-import { verifyOrderId } from "../middleware/Order.js";
+import { authenticateUser } from "../middleware/authenticateUser.js";
 import orderDetailRouter from "./orderDetailRoutes.js";
 
 const orderRouter = express.Router({ mergeParams: true });
 
-// Middleware to verify orderId when present
-orderRouter.param("orderId", verifyOrderId);
-
-// Routes for managing orders
-orderRouter.get("/", getAllOrders); // Fetch all orders or filter by userId
-orderRouter.post("/", createOrder); // Create a new order
-orderRouter.get("/:orderId", getOrderById); // Get order by orderId
-orderRouter.put("/:orderId", patchOrder); // Update an order
-orderRouter.delete("/:orderId", deleteOrder); // Delete an order
+// Define routes
+orderRouter.get("/current", authenticateUser, getCurrentOrder); // Ensure /current comes before /:orderId
+orderRouter.get("/", authenticateUser, getAllOrders);
+orderRouter.post("/", authenticateUser, createOrder);
+orderRouter.get("/:orderId", authenticateUser, getOrderById);
+orderRouter.put("/:orderId", authenticateUser, patchOrder);
+orderRouter.delete("/:orderId", authenticateUser, deleteOrder);
 
 // Nested routes for order details
 orderRouter.use("/:orderId/order_details", orderDetailRouter);
