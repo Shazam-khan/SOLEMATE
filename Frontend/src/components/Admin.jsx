@@ -1,30 +1,33 @@
-import { useState } from 'react'
-import axios from 'axios'
-import { useNavigate } from 'react-router-dom'
+import { useState } from 'react';
+import axios from 'axios';
+import AdminDashboard from './dashboard';
 
-// Placeholder URL for backend API
-const API_URL = 'http://localhost:5000/api/auth/login' // Adjust this URL if needed
+const API_URL = 'http://localhost:5000/api/auth/login'; // Adjust this URL if needed
 
 export default function Admin() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const navigate = useNavigate()
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // Track login status
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
+    e.preventDefault();
+    setError('');
 
     try {
-      const response = await axios.post(API_URL, { email, password })
+      const response = await axios.post(API_URL, { email, password });
       console.log(response);
       if (response.status === 200) {
-        // Redirect to admin dashboard on successful login
-        navigate('/dashboard')
+        setIsLoggedIn(true); // Mark the user as logged in
       }
     } catch (error) {
-      setError('Invalid email or password')
+      setError('Invalid email or password');
     }
+  };
+
+  // Render AdminDashboard if logged in
+  if (isLoggedIn) {
+    return <AdminDashboard />;
   }
 
   return (
@@ -68,5 +71,5 @@ export default function Admin() {
         )}
       </div>
     </div>
-  )
+  );
 }

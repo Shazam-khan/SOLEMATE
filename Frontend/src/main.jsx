@@ -9,7 +9,6 @@ import About from "./components/About.jsx";
 import Contact from "./components/Contact.jsx";
 import Signup from "./components/Signup.jsx";
 import Admin from "./components/Admin.jsx";
-import Dashboard from "./components/dashboard.jsx";
 import Products from "./components/Products.jsx";
 import ProductDetail from "./components/ProductDetail.jsx"; // Import ProductDetail
 import Cart from "./components/Cart.jsx"; // Import Cart component
@@ -75,10 +74,6 @@ const router = createBrowserRouter([
       {
         path: "/admin",
         element: <Admin />,
-      },
-      {
-        path: "/dashboard",
-        element: <Dashboard />,
       },
     ],
   },

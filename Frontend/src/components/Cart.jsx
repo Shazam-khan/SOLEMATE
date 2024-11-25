@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import ReactLoading from "react-loading"; // Import ReactLoading
+import ReactLoading from "react-loading";
 
 const Cart = () => {
   const { userId } = useParams(); // Get userId from URL params

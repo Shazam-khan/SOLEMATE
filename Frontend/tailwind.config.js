@@ -9,6 +9,7 @@ export default {
       colors: {
         'custom-brown': '#3D2B1F',
         'custom-brown-light': '#6D5642',
+        'custom-gold': '#D1B89F',
       },
       backgroundImage: {
         'brown-gradient': 'linear-gradient(135deg, #B89F8D, #3D2B1F)', // Define gradient

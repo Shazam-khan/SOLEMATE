@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTruck } from '@fortawesome/free-solid-svg-icons';
+import ReactLoading from "react-loading";
 
 const AddressPage = () => {
   const { userId, orderId } = useParams(); // Get userId and orderId from URL params
@@ -52,7 +55,14 @@ const AddressPage = () => {
     }
   };
 
-  if (loading) return <p>Loading order details...</p>;
+  // Render Loading Indicator
+  if (loading)
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <ReactLoading type="spin" color="#4A5568" height={50} width={50} />
+      </div>
+    );
+    
   if (error) return <p className="text-red-600">{error}</p>;
 
   return (
@@ -61,7 +71,7 @@ const AddressPage = () => {
         {/* Timeline Section */}
         <div className="flex justify-between items-center mb-8">
           <div className="w-[10%] h-[3px] bg-custom-brown-light"></div>
-          <div className="h-5 w-5 rounded-full bg-custom-brown"></div>
+          <div><FontAwesomeIcon icon={faTruck} className="text-custom-brown text-3xl"/></div>
           <div className="w-[88%] h-[3px] bg-custom-brown-light"></div>
         </div>
 

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Hero from "./Hero";
 import WhyChose from "./whyChose";
 import Policy from "./policy";
+import Faqs from "./Faqs";
 
 function Home() {
     return (
@@ -15,6 +16,9 @@ function Home() {
             </div>
             <div className="block">
                 <Policy />
+            </div>
+            <div className="block">
+                <Faqs />
             </div>
 
         </div>
