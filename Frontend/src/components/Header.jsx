@@ -111,7 +111,7 @@ function Header() {
                                             className="absolute top-7 right-0 bottom-0 w-0 h-0.5 bg-custom-brown transition-all duration-300 group-hover:w-full"
                                         ></span>
                                     </NavLink>
-                                    <div className="absolute hidden group-hover:block left-0 mt-2 w-48 bg-custom-brown-light shadow-lg rounded-lg z-50">
+                                    {/* <div className="absolute hidden group-hover:block left-0 mt-2 w-48 bg-custom-brown-light shadow-lg rounded-lg z-50">
                                         <NavLink
                                             to="/products/formal shoes"
                                             className="block px-4 py-2 text-white hover:bg-custom-brown"
@@ -136,7 +136,7 @@ function Header() {
                                         >
                                             Slippers
                                         </NavLink>
-                                    </div>
+                                    </div> */}
                                 </li>
                                 <li className="relative group">
                                     <NavLink

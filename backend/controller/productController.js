@@ -78,7 +78,7 @@ export const UpdateProduct = async (req, res) => {
 
     // Update the product
     const updatedProduct = await db.query(
-      "UPDATE Product SET p_name = $1, brand = $2, price = $3 WHERE p_id = $5 RETURNING *",
+      "UPDATE Product SET p_name = $1, brand = $2, price = $3 WHERE p_id = $4 RETURNING *",
       [updatedName, updatedBrand, updatedPrice, id]
     );
 
@@ -88,6 +88,7 @@ export const UpdateProduct = async (req, res) => {
       error: false,
     });
   } catch (error) {
+    console.log(error);
     res
       .status(500)
       .json({ message: "Internal Server Error", Product: null, error: true });
@@ -102,9 +103,10 @@ export const DeleteProduct = async (req, res) => {
     await db.query("BEGIN");
 
     // Delete related entries in dependent tables
-    await db.query(`DELETE FROM 'P_size' WHERE product_id = $1`, [id]);
-    await db.query(`DELETE FROM 'P_Image' WHERE product_id = $1`, [id]);
+    await db.query(`DELETE FROM "P_Size" WHERE product_id = $1`, [id]);
+    await db.query(`DELETE FROM "P_Images" WHERE product_id = $1`, [id]);
     await db.query("DELETE FROM category WHERE product_p_id = $1", [id]);
+    await db.query(`DELETE FROM "order_details" WHERE product_p_id = $1`, [id]);
 
     // Delete the product itself
     const result = await db.query(
@@ -272,9 +274,14 @@ export const getImageById = async (req, res) => {
 export const postImage = async (req, res) => {
   const { id } = req.params;
   const { filename } = req.body;
-  console.log(req.file);
+  console.log("File received:", req.file);
+  console.log("Body:", req.body);
   try {
     const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ message: "Image file is required." });
+    }
 
     if (!filename || !file) {
       return res.status(400).json({

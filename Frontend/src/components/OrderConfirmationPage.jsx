@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTruck } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTruck } from "@fortawesome/free-solid-svg-icons";
 import ReactLoading from "react-loading";
+import emailjs from "emailjs-com";
+import { useUser } from "./UserContext.jsx"; // Import UserContext
 
 const OrderConfirmationPage = () => {
   const { userId, orderId } = useParams(); // Get userId and orderId from URL params
+  const { userEmail } = useUser(); // Access userEmail from UserContext
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -50,23 +53,40 @@ const OrderConfirmationPage = () => {
   }, [userId, orderId]);
 
   const handleConfirm = async () => {
-    if (!paymentId) {
-      alert("Payment ID is missing. Cannot confirm the order.");
+    if (!paymentId || !orderDetails) {
+      alert("Missing payment or order details. Cannot confirm the order.");
       return;
     }
 
     try {
       setLoading(true);
+
+      // Confirm the order
       const response = await axios.put(
         `http://localhost:5000/api/users/${userId}/order/${orderId}/payments/${paymentId}`,
         { paymentStatus: "COMPLETED" },
         { withCredentials: true }
       );
-      alert(response.data.message || "Order confirmed successfully!");
+
+      // Send email using EmailJS
+      await emailjs.send(
+        "service_dx5aw5i", // Replace with your EmailJS Service ID
+        "template_jyh66be", // Replace with your EmailJS Template ID
+        {
+          to_name: userEmail.split("@")[0], // Use part of email as a placeholder for the name
+          orderId: orderDetails.o_id,
+          totalAmount: orderDetails.total_amount.toFixed(2),
+          address: orderDetails.address,
+          customerEmail: userEmail, // Dynamically pass the customer's email
+        },
+        "onjGx22fMfcQtPE4H" // Replace with your EmailJS User ID
+      );
+
+      alert("Order confirmed and email sent successfully!");
       navigate("/"); // Redirect to homepage or another relevant page
     } catch (err) {
-      console.error("Failed to confirm the order:", err);
-      alert("Failed to confirm the order. Please try again.");
+      console.error("Failed to confirm the order or send email:", err);
+      alert("Failed to confirm the order or send email. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -79,7 +99,7 @@ const OrderConfirmationPage = () => {
         <ReactLoading type="spin" color="#4A5568" height={50} width={50} />
       </div>
     );
-    
+
   if (error) return <p className="text-red-600">{error}</p>;
 
   return (
@@ -89,7 +109,7 @@ const OrderConfirmationPage = () => {
         <div className="flex justify-between items-center mb-8">
           <div className="w-[83%] h-[3px] bg-custom-brown-light"></div>
           <div>
-          <FontAwesomeIcon icon={faTruck} className="text-custom-brown text-3xl" />
+            <FontAwesomeIcon icon={faTruck} className="text-custom-brown text-3xl" />
           </div>
           <div className="w-[15%] h-[3px] bg-custom-brown-light"></div>
         </div>

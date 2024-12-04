@@ -86,7 +86,7 @@ const Cart = () => {
   // Calculate total cost of items in the cart
   const calculateTotal = () => {
     return cartItems
-      .reduce((total, item) => total + item.od_price, 0)
+      .reduce((total, item) => total + (item.od_price * item.quantity), 0)
       .toFixed(2);
   };
 

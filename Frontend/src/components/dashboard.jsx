@@ -14,14 +14,14 @@ const AdminDashboard = () => {
     images: [],
   });
 
-  const BASE_URL = "http://localhost:5000/api/products"; // Backend route
+  const BASE_URL = "http://localhost:5000/api/products";
 
   useEffect(() => {
     // Fetch all products
     const fetchProducts = async () => {
       try {
         const response = await axios.get(BASE_URL);
-        setProducts(response.data.Products || []); // Align with backend response structure
+        setProducts(response.data.Products || []);
       } catch (error) {
         console.error("Error fetching products:", error);
         setProducts([]);
@@ -35,22 +35,99 @@ const AdminDashboard = () => {
     try {
       if (editingProduct) {
         // Update existing product
-        await axios.put(`${BASE_URL}/${editingProduct.p_id}`, editingProduct);
-        setProducts((prev) =>
-          prev.map((product) =>
-            product.p_id === editingProduct.p_id ? editingProduct : product
-          )
-        );
+        const updatedData = {
+          pName: newProduct.p_name,
+          brand: newProduct.brand,
+          price: newProduct.price,
+          category: newProduct.category,
+        };
+
+        await axios.put(`${BASE_URL}/${editingProduct.p_id}`, updatedData);
+
+        // Update sizes
+        for (const size of newProduct.sizes) {
+          if (size.id) {
+            // Existing size, update
+            await axios.put(
+              `${BASE_URL}/${editingProduct.p_id}/size/${size.id}`,
+              {
+                size: size.size,
+                stock: size.quantity,
+              }
+            );
+          } else {
+            // New size, add
+            await axios.post(`${BASE_URL}/${editingProduct.p_id}/size`, {
+              size: size.size,
+              stock: size.quantity,
+            });
+          }
+        }
+
+        // Refresh the products list
+        const response = await axios.get(BASE_URL);
+        setProducts(response.data.Products || []);
       } else {
         // Add new product
-        const response = await axios.post(BASE_URL, newProduct);
-        setProducts((prev) => [...prev, response.data]);
+        const productResponse = await axios.post(BASE_URL, {
+          pName: newProduct.p_name,
+          brand: newProduct.brand,
+          price: newProduct.price,
+        });
+
+        const productId = productResponse.data.id.p_id;
+
+        // Add category
+        await axios.post(`${BASE_URL}/${productId}/category`, {
+          userPreference: "U",
+          cName: newProduct.category,
+          description: `${newProduct.category} category`,
+        });
+
+        // Add sizes
+        for (const size of newProduct.sizes) {
+          await axios.post(`${BASE_URL}/${productId}/size`, {
+            size: size.size,
+            stock: size.quantity,
+          });
+        }
+
+        // Add images
+        for (const image of newProduct.images) {
+          const formData = new FormData();
+          formData.append("filename", image.name);
+          formData.append("image", image.file);
+          await axios.post(`${BASE_URL}/${productId}/images`, formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
+        }
+
+        // Refresh product list
+        const updatedProducts = [...products, productResponse.data.id];
+        setProducts(updatedProducts);
       }
     } catch (error) {
       console.error("Error saving product:", error);
     }
     setIsDialogOpen(false);
     setEditingProduct(null);
+    resetNewProduct();
+  };
+
+  // Delete product
+  const handleDeleteProduct = async (id) => {
+    try {
+      await axios.delete(`${BASE_URL}/${id}`);
+      // Update the product list in state
+      setProducts((prevProducts) =>
+        prevProducts.filter((product) => product.p_id !== id)
+      );
+    } catch (error) {
+      console.error("Error deleting product:", error);
+    }
+  };
+
+  const resetNewProduct = () => {
     setNewProduct({
       p_name: "",
       brand: "",
@@ -61,46 +138,33 @@ const AdminDashboard = () => {
     });
   };
 
-  // Delete product
-  const handleDeleteProduct = async (id) => {
-    try {
-      await axios.delete(`${BASE_URL}/${id}`);
-      setProducts((prev) => prev.filter((product) => product.p_id !== id));
-    } catch (error) {
-      console.error("Error deleting product:", error);
-    }
-  };
-
   // Handle Adding and Updating Sizes
   const handleAddSize = () => {
-    const target = editingProduct || newProduct;
-    const updated = {
-      ...target,
-      sizes: [...target.sizes, { size: "", quantity: "" }],
-    };
-    editingProduct ? setEditingProduct(updated) : setNewProduct(updated);
+    setNewProduct((prev) => ({
+      ...prev,
+      sizes: [...prev.sizes, { size: "", quantity: "" }],
+    }));
   };
 
   const handleRemoveSize = (index) => {
-    const target = editingProduct || newProduct;
-    const updated = {
-      ...target,
-      sizes: target.sizes.filter((_, i) => i !== index),
-    };
-    editingProduct ? setEditingProduct(updated) : setNewProduct(updated);
+    setNewProduct((prev) => ({
+      ...prev,
+      sizes: prev.sizes.filter((_, i) => i !== index),
+    }));
   };
 
-  // Handle file input change
   const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    const newImages = files.map((file) => ({
-      name: file.name,
-      url: URL.createObjectURL(file),
-    }));
-    if (editingProduct) {
-      setEditingProduct({ ...editingProduct, images: newImages });
-    } else {
-      setNewProduct({ ...newProduct, images: newImages });
+    if (!editingProduct) {
+      // Allow adding images only when creating a new product
+      const files = Array.from(e.target.files);
+      const newImages = files.map((file) => ({
+        name: file.name,
+        file,
+      }));
+      setNewProduct((prev) => ({
+        ...prev,
+        images: [...prev.images, ...newImages],
+      }));
     }
   };
 
@@ -129,6 +193,14 @@ const AdminDashboard = () => {
                     <button
                       onClick={() => {
                         setEditingProduct(product);
+                        setNewProduct({
+                          p_name: product.p_name,
+                          brand: product.brand,
+                          price: product.price,
+                          category: product.category,
+                          sizes: product.sizes || [{ size: "", quantity: "" }],
+                          images: [], // Prevent editing images
+                        });
                         setIsDialogOpen(true);
                       }}
                       className="text-blue-600"
@@ -175,11 +247,12 @@ const AdminDashboard = () => {
                 <label className="text-sm font-medium mb-1">Name</label>
                 <input
                   type="text"
-                  value={editingProduct ? editingProduct.p_name : newProduct.p_name}
+                  value={newProduct.p_name}
                   onChange={(e) =>
-                    editingProduct
-                      ? setEditingProduct({ ...editingProduct, p_name: e.target.value })
-                      : setNewProduct({ ...newProduct, p_name: e.target.value })
+                    setNewProduct((prev) => ({
+                      ...prev,
+                      p_name: e.target.value,
+                    }))
                   }
                   className="w-full border px-3 py-2 rounded"
                 />
@@ -188,11 +261,12 @@ const AdminDashboard = () => {
                 <label className="text-sm font-medium mb-1">Brand</label>
                 <input
                   type="text"
-                  value={editingProduct ? editingProduct.brand : newProduct.brand}
+                  value={newProduct.brand}
                   onChange={(e) =>
-                    editingProduct
-                      ? setEditingProduct({ ...editingProduct, brand: e.target.value })
-                      : setNewProduct({ ...newProduct, brand: e.target.value })
+                    setNewProduct((prev) => ({
+                      ...prev,
+                      brand: e.target.value,
+                    }))
                   }
                   className="w-full border px-3 py-2 rounded"
                 />
@@ -201,11 +275,12 @@ const AdminDashboard = () => {
                 <label className="text-sm font-medium mb-1">Price</label>
                 <input
                   type="number"
-                  value={editingProduct ? editingProduct.price : newProduct.price}
+                  value={newProduct.price}
                   onChange={(e) =>
-                    editingProduct
-                      ? setEditingProduct({ ...editingProduct, price: e.target.value })
-                      : setNewProduct({ ...newProduct, price: e.target.value })
+                    setNewProduct((prev) => ({
+                      ...prev,
+                      price: e.target.value,
+                    }))
                   }
                   className="w-full border px-3 py-2 rounded"
                 />
@@ -213,11 +288,12 @@ const AdminDashboard = () => {
               <div className="mb-4">
                 <label className="text-sm font-medium mb-1">Category</label>
                 <select
-                  value={editingProduct ? editingProduct.category : newProduct.category}
+                  value={newProduct.category}
                   onChange={(e) =>
-                    editingProduct
-                      ? setEditingProduct({ ...editingProduct, category: e.target.value })
-                      : setNewProduct({ ...newProduct, category: e.target.value })
+                    setNewProduct((prev) => ({
+                      ...prev,
+                      category: e.target.value,
+                    }))
                   }
                   className="w-full border px-3 py-2 rounded"
                 >
@@ -238,7 +314,10 @@ const AdminDashboard = () => {
                       onChange={(e) => {
                         const updatedSizes = [...newProduct.sizes];
                         updatedSizes[index].size = e.target.value;
-                        setNewProduct({ ...newProduct, sizes: updatedSizes });
+                        setNewProduct((prev) => ({
+                          ...prev,
+                          sizes: updatedSizes,
+                        }));
                       }}
                       className="w-1/2 border px-3 py-2 rounded"
                     />
@@ -249,7 +328,10 @@ const AdminDashboard = () => {
                       onChange={(e) => {
                         const updatedSizes = [...newProduct.sizes];
                         updatedSizes[index].quantity = e.target.value;
-                        setNewProduct({ ...newProduct, sizes: updatedSizes });
+                        setNewProduct((prev) => ({
+                          ...prev,
+                          sizes: updatedSizes,
+                        }));
                       }}
                       className="w-1/2 border px-3 py-2 rounded"
                     />
@@ -270,16 +352,18 @@ const AdminDashboard = () => {
                   Add Size
                 </button>
               </div>
-              <div className="mb-4">
-                <label className="text-sm font-medium mb-1">Images</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  multiple
-                  className="w-full border px-3 py-2 rounded"
-                />
-              </div>
+              {!editingProduct && (
+                <div className="mb-4">
+                  <label className="text-sm font-medium mb-1">Images</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    multiple
+                    className="w-full border px-3 py-2 rounded"
+                  />
+                </div>
+              )}
               <div className="flex justify-between">
                 <button
                   type="button"

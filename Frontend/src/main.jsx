@@ -10,13 +10,14 @@ import Contact from "./components/Contact.jsx";
 import Signup from "./components/Signup.jsx";
 import Admin from "./components/Admin.jsx";
 import Products from "./components/Products.jsx";
-import ProductDetail from "./components/ProductDetail.jsx"; // Import ProductDetail
-import Cart from "./components/Cart.jsx"; // Import Cart component
-import AddressPage from "./components/AddressPage.jsx"; // Import AddressPage component
-import PaymentPage from "./components/PaymentPage.jsx"; // Import PaymentPage component
-import PaymentResult from "./components/PaymentResult.jsx"; // Import PaymentResult component
-import OrderConfirmationPage from "./components/OrderConfirmationPage.jsx"; // Import OrderConfirmationPage component
-import { UserProvider } from "./components/UserContext.jsx"; // Import the context provider
+import ProductDetail from "./components/ProductDetail.jsx";
+import Cart from "./components/Cart.jsx";
+import AddressPage from "./components/AddressPage.jsx";
+import PaymentPage from "./components/PaymentPage.jsx";
+import PaymentResult from "./components/PaymentResult.jsx";
+import OrderConfirmationPage from "./components/OrderConfirmationPage.jsx";
+import AdminDashboard from "./components/dashboard.jsx"; // Import AdminDashboard
+import { UserProvider } from "./components/UserContext.jsx";
 
 const router = createBrowserRouter([
   {
@@ -41,26 +42,26 @@ const router = createBrowserRouter([
       },
       {
         path: "/products/:productId",
-        element: <ProductDetail />, // Product Detail page
+        element: <ProductDetail />,
       },
       {
-        path: "/users/:userId/cart", // Cart route with userId
+        path: "/users/:userId/cart",
         element: <Cart />,
       },
       {
-        path: "/users/:userId/order/:orderId/address", // Address Page route with userId and orderId
+        path: "/users/:userId/order/:orderId/address",
         element: <AddressPage />,
       },
       {
-        path: "/users/:userId/order/:orderId/payment", // Payment Page route
+        path: "/users/:userId/order/:orderId/payment",
         element: <PaymentPage />,
       },
       {
-        path: "/users/:userId/order/:orderId/confirmation", // Order Confirmation Page route
+        path: "/users/:userId/order/:orderId/confirmation",
         element: <OrderConfirmationPage />,
       },
       {
-        path: "/payment/result", // Payment Result route
+        path: "/payment/result",
         element: <PaymentResult />,
       },
       {
@@ -74,6 +75,10 @@ const router = createBrowserRouter([
       {
         path: "/admin",
         element: <Admin />,
+      },
+      {
+        path: "/admin/dashboard", // Admin Dashboard route
+        element: <AdminDashboard />,
       },
     ],
   },

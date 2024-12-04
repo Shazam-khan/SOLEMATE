@@ -51,6 +51,54 @@ export const userLogin = async (req, res) => {
   }
 };
 
+export const adminLogin = async (req, res) => {
+  const { email, password } = req.body;
+
+  // Check for missing fields
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email and Password are required" });
+  }
+
+  try {
+    const result = await db.query(
+      'SELECT * FROM "Users" WHERE email = $1 AND password = $2',
+      [email, password]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        message: "Invalid email or password",
+        User: null,
+        error: true,
+      });
+    }
+
+    const user = result.rows[0];
+
+    // Check if the user is an admin
+    if (user.is_admin !== "Y") {
+      return res.status(403).json({
+        message: "Access denied. Admins only.",
+        User: null,
+        error: true,
+      });
+    }
+
+    const token = generateTokenSetCookie(res, user.u_id, user.is_admin);
+    console.log(token);
+    return res.status(200).json({
+      message: "Admin logged in successfully",
+      User: { ...user, password: null },
+      error: false,
+    });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", error: true });
+  }
+};
+
 export const userSignUp = async (req, res) => {
   const { fname, lname, email, password, phoneNumber } = req.body;
 

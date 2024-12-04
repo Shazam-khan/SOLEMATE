@@ -10,6 +10,15 @@ const PaymentPage = () => {
   const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState(""); // Track payment method input
   const [paymentAmount, setPaymentAmount] = useState(0); // Track payment amount
+  const [cardDetails, setCardDetails] = useState({
+    cardNumber: "",
+    expiryDate: "",
+    cvv: "",
+  });
+  const [bankDetails, setBankDetails] = useState({
+    accountNumber: "",
+    bankName: "",
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -44,12 +53,24 @@ const PaymentPage = () => {
 
     try {
       setLoading(true);
+
+      // Prepare payment data based on the selected method
+      const paymentData = {
+        paymentMethod,
+        paymentAmount,
+      };
+
+      if (paymentMethod === "Debit Card") {
+        paymentData.cardDetails = cardDetails;
+      } else if (paymentMethod === "Bank Transfer") {
+        paymentData.bankDetails = bankDetails;
+      }
+
       const response = await axios.post(
         `http://localhost:5000/api/users/${userId}/order/${orderId}/payments`,
-        { paymentMethod, paymentAmount },
+        paymentData,
         { withCredentials: true }
       );
-      //alert(response.data.message || "Payment successful!");
       navigate(`/users/${userId}/order/${orderId}/confirmation`); // Redirect to confirmation page
     } catch (err) {
       console.error("Failed to process payment:", err);
@@ -75,7 +96,9 @@ const PaymentPage = () => {
         {/* Timeline Section */}
         <div className="flex justify-between items-center mb-8">
           <div className="w-[49%] h-[3px] bg-custom-brown-light"></div>
-          <div><FontAwesomeIcon icon={faTruck} className="text-custom-brown text-3xl" /></div>
+          <div>
+            <FontAwesomeIcon icon={faTruck} className="text-custom-brown text-3xl" />
+          </div>
           <div className="w-[49%] h-[3px] bg-custom-brown-light"></div>
         </div>
 
@@ -96,11 +119,68 @@ const PaymentPage = () => {
             onChange={(e) => setPaymentMethod(e.target.value)}
             className="w-full p-3 border rounded-md text-black focus:outline-none focus:ring-2 focus:ring-custom-brown"
           >
-            <option className="text-black bg-white">Select a payment method</option>
-            <option className="text-black bg-white">Debit Card</option>
-            <option className="text-black bg-white">Cash on Delivery</option>
-            <option className="text-black bg-white">Bank Transfer</option>
+            <option value="">Select a payment method</option>
+            <option value="Debit Card">Debit Card</option>
+            <option value="Cash on Delivery">Cash on Delivery</option>
+            <option value="Bank Transfer">Bank Transfer</option>
           </select>
+
+          {/* Debit Card Fields */}
+          {paymentMethod === "Debit Card" && (
+            <div className="space-y-4">
+              <input
+                type="text"
+                placeholder="Card Number"
+                value={cardDetails.cardNumber}
+                onChange={(e) =>
+                  setCardDetails({ ...cardDetails, cardNumber: e.target.value })
+                }
+                className="w-full p-3 border rounded-md"
+              />
+              <input
+                type="text"
+                placeholder="Expiry Date (MM/YY)"
+                value={cardDetails.expiryDate}
+                onChange={(e) =>
+                  setCardDetails({ ...cardDetails, expiryDate: e.target.value })
+                }
+                className="w-full p-3 border rounded-md"
+              />
+              <input
+                type="text"
+                placeholder="CVV"
+                value={cardDetails.cvv}
+                onChange={(e) =>
+                  setCardDetails({ ...cardDetails, cvv: e.target.value })
+                }
+                className="w-full p-3 border rounded-md"
+              />
+            </div>
+          )}
+
+          {/* Bank Transfer Fields */}
+          {paymentMethod === "Bank Transfer" && (
+            <div className="space-y-4">
+              <input
+                type="text"
+                placeholder="Account Number"
+                value={bankDetails.accountNumber}
+                onChange={(e) =>
+                  setBankDetails({ ...bankDetails, accountNumber: e.target.value })
+                }
+                className="w-full p-3 border rounded-md"
+              />
+              <input
+                type="text"
+                placeholder="Bank Name"
+                value={bankDetails.bankName}
+                onChange={(e) =>
+                  setBankDetails({ ...bankDetails, bankName: e.target.value })
+                }
+                className="w-full p-3 border rounded-md"
+              />
+            </div>
+          )}
 
           {/* Display the payment amount */}
           <p className="text-lg mt-4">

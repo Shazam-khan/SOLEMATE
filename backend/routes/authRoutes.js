@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  adminLogin,
   userLogin,
   userLogout,
   userSignUp,
@@ -10,6 +11,7 @@ const authRouter = express.Router();
 
 authRouter.post("/signup", userSignUp);
 authRouter.post("/login", userLogin);
+authRouter.post("/admin/login", adminLogin);
 authRouter.post("/logout", userLogout);
 authRouter.get("/me", authenticateUser, (req, res) => {
   const { userId, isAdmin } = req.user;
