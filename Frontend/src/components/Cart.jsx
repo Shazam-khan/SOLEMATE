@@ -103,8 +103,9 @@ const Cart = () => {
         return;
       }
 
-      const updatedPrice = (item.od_price / item.quantity) * newQuantity;
-
+      const updatedPricef = (item.od_price / item.quantity) * newQuantity;
+      const updatedPrice = Math.floor(updatedPricef);
+      
       const response = await axios.put(
         `http://localhost:5000/api/users/${userId}/order/${orderId}/order_details/${od_id}`,
         {
