@@ -9,6 +9,8 @@ import userRouter from "./routes/userRoutes.js";
 import authRouter from "./routes/authRoutes.js";
 import { authenticateUser } from "./middleware/authenticateUser.js";
 import paymentRouter from "./routes/paymentRoutes.js";
+import stripeRoutes from "./routes/stripeRoutes.js"
+
 const app = express();
 
 app.use(express.json());
@@ -30,6 +32,7 @@ const PORT = process.env.PORT || 5000;
 app.use("/api/products", productRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/users", userRouter);
+app.use('/api', stripeRoutes);
 
 //spin up dev server
 app.listen(PORT, () => {
