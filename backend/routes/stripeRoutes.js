@@ -1,7 +1,7 @@
 import express from 'express';
 import Stripe from 'stripe';
 const router = express.Router();
-const stripe = Stripe('sk_test_51RGKMVCYewQqgfrHMUypPIsrSf7UZMpKdbQ5XL1UsofXkMthOanYObhnhJY3iCuuAZmrLf6KvHxVXR8bWPm3A69900wwKoQL6M');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 // Endpoint to create a Stripe Checkout Session
 router.post('/create-checkout-session', async (req, res) => {
