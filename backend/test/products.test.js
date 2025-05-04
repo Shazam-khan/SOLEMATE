@@ -1,67 +1,18 @@
 import supertest from 'supertest';
 import express from 'express';
-import { db } from '../DB/connect.js';
-import productRouter from '../routes/productRoutes.js';
 import http from 'http';
 
-// Force mock
+// Mock modules before importing any modules that use them
 jest.mock('../DB/connect.js', () => {
   const dbMock = {
     connect: jest.fn(() => Promise.resolve()),
     query: jest.fn(() => Promise.resolve({ rows: [] })),
     end: jest.fn(() => Promise.resolve()),
   };
-  console.log('Forced DB mock in product.test.js:', {
-    queryIsMock: jest.isMockFunction(dbMock.query),
-  });
   return { db: dbMock };
 });
 
-console.log('Imported db.query is mock:', jest.isMockFunction(db.query));
-
-// Create an Express app for testing
-const app = express();
-app.use(express.json());
-app.use('/api/products', productRouter);
-
-// Create server for supertest
-const server = http.createServer(app);
-
-// Mock Multer for file uploads
-jest.mock('multer', () => {
-  const multerMock = () => ({
-    single: () => (req, res, next) => {
-      req.file = { buffer: Buffer.from('mock-image'), mimetype: 'image/jpeg' };
-      next();
-    },
-  });
-  multerMock.memoryStorage = () => ({
-    _handleFile: (req, file, cb) => {
-      cb(null, {
-        buffer: file.buffer,
-        size: file.buffer.length,
-      });
-    },
-    _removeFile: (req, file, cb) => {
-      cb(null);
-    },
-  });
-  return multerMock;
-});
-
-// Mock Supabase for image uploads
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(() => ({
-    storage: {
-      from: jest.fn(() => ({
-        upload: jest.fn(() => ({ data: { path: 'public/mock-image.jpg' }, error: null })),
-        getPublicUrl: jest.fn(() => ({ data: { publicUrl: 'http://mock-url.com/mock-image.jpg' } })),
-      })),
-    },
-  })),
-}));
-
-// Mock middleware to avoid database queries
+// Mock middleware before importing router
 jest.mock('../middleware/Products', () => ({
   checkProductId: jest.fn((req, res, next) => {
     req.product = { p_id: req.params.id, p_name: 'Mock Product', brand: 'Mock', price: 99.99 };
@@ -77,17 +28,60 @@ jest.mock('../middleware/Products', () => ({
   }),
 }));
 
+// Mock Multer
+jest.mock('multer', () => {
+  const multerMock = () => ({
+    single: () => (req, res, next) => {
+      req.file = { buffer: Buffer.from('mock-image'), mimetype: 'image/jpeg' };
+      next();
+    },
+  });
+  multerMock.memoryStorage = () => ({});
+  return multerMock;
+});
+
+// Mock Supabase
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn(() => ({
+    storage: {
+      from: jest.fn(() => ({
+        upload: jest.fn(() => ({ data: { path: 'public/mock-image.jpg' }, error: null })),
+        getPublicUrl: jest.fn(() => ({ data: { publicUrl: 'http://mock-url.com/mock-image.jpg' } })),
+      })),
+    },
+  })),
+}));
+
+// Now import modules that use the mocks
+import { db } from '../DB/connect.js';
+import productRouter from '../routes/productRoutes.js';
+
 describe('Product Routes', () => {
+  let app;
+  let server;
+  let request;
+
   beforeEach(() => {
+    // Create a fresh express app for each test
+    app = express();
+    app.use(express.json());
+    app.use('/api/products', productRouter);
+    
+    // Create server for supertest
+    server = http.createServer(app);
+    request = supertest(server);
+    
+    // Clear mocks before each test
     jest.clearAllMocks();
   });
 
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
-
-  afterAll((done) => {
-    server.close(done);
+  afterEach((done) => {
+    // Close the server after each test
+    if (server && server.listening) {
+      server.close(done);
+    } else {
+      done();
+    }
   });
 
   // Test GET /api/products
@@ -98,7 +92,7 @@ describe('Product Routes', () => {
     ];
     db.query.mockResolvedValueOnce({ rows: mockProducts });
 
-    const response = await supertest(app).get('/api/products');
+    const response = await request.get('/api/products');
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
       message: null,
@@ -114,7 +108,7 @@ describe('Product Routes', () => {
     const createdProduct = { p_id: '3', p_name: 'Sandals', brand: 'Puma', price: 59.99 };
     db.query.mockResolvedValueOnce({ rows: [createdProduct] });
 
-    const response = await supertest(app)
+    const response = await request
       .post('/api/products')
       .send(newProduct);
     expect(response.status).toBe(201);
@@ -132,7 +126,7 @@ describe('Product Routes', () => {
   // Test GET /api/products/:id
   test('GET /api/products/:id should return a product by ID', async () => {
     const mockProduct = { p_id: '1', p_name: 'Sneaker', brand: 'Nike', price: 99.99 };
-    const response = await supertest(app).get('/api/products/1');
+    const response = await request.get('/api/products/1');
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
       message: 'Product Found',
@@ -147,11 +141,12 @@ describe('Product Routes', () => {
     const updatedProductInput = { pName: 'Updated Sneaker', brand: 'Nike', price: 109.99 };
     const mockExistingProduct = { p_id: '1', p_name: 'Sneaker', brand: 'Nike', price: 99.99 };
     const mockUpdatedProduct = { p_id: '1', p_name: 'Updated Sneaker', brand: 'Nike', price: 109.99 };
+    
     db.query
       .mockResolvedValueOnce({ rows: [mockExistingProduct] })
       .mockResolvedValueOnce({ rows: [mockUpdatedProduct] });
 
-    const response = await supertest(app)
+    const response = await request
       .put('/api/products/1')
       .send(updatedProductInput);
     expect(response.status).toBe(200);

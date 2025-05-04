@@ -1,33 +1,18 @@
 import supertest from 'supertest';
 import express from 'express';
-import { db } from '../DB/connect.js';
-import userRouter from '../routes/userRoutes.js';
 import http from 'http';
 
-// Force mock for database connection
+// Force mock for database connection - BEFORE importing anything else
 jest.mock('../DB/connect.js', () => {
   const dbMock = {
     connect: jest.fn(() => Promise.resolve()),
     query: jest.fn(() => Promise.resolve({ rows: [] })),
     end: jest.fn(() => Promise.resolve()),
   };
-  console.log('Forced DB mock in user.test.js:', {
-    queryIsMock: jest.isMockFunction(dbMock.query),
-  });
   return { db: dbMock };
 });
 
-console.log('Imported db.query is mock:', jest.isMockFunction(db.query));
-
-// Create an Express app for testing
-const app = express();
-app.use(express.json());
-app.use('/api/users', userRouter);
-
-// Create server for supertest
-const server = http.createServer(app);
-
-// Mock middleware
+// Mock middleware - BEFORE importing routes
 jest.mock('../middleware/user.js', () => ({
   ValidateUserId: jest.fn((req, res, next) => {
     req.user = {
@@ -46,31 +31,52 @@ jest.mock('../middleware/user.js', () => ({
   }),
 }));
 
-// Mock nested routers to prevent execution
+// Mock nested routers - BEFORE importing router that uses them
 jest.mock('../routes/orderRoutes.js', () => ({
   __esModule: true,
   default: jest.fn((req, res) => res.status(200).json({ message: 'Mock order route' })),
 }));
+
 jest.mock('../routes/orderDetailRoutes.js', () => ({
   __esModule: true,
   default: jest.fn((req, res) => res.status(200).json({ message: 'Mock order details route' })),
 }));
+
 jest.mock('../routes/paymentRoutes.js', () => ({
   __esModule: true,
   default: jest.fn((req, res) => res.status(200).json({ message: 'Mock payment route' })),
 }));
 
+// NOW import modules that use the mocks
+import { db } from '../DB/connect.js';
+import userRouter from '../routes/userRoutes.js';
+
 describe('User Routes', () => {
+  let app;
+  let server;
+  let request;
+
   beforeEach(() => {
+    // Create a fresh express app for each test
+    app = express();
+    app.use(express.json());
+    app.use('/api/users', userRouter);
+    
+    // Create server for supertest
+    server = http.createServer(app);
+    request = supertest(server);
+    
+    // Clear mocks before each test
     jest.clearAllMocks();
   });
 
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
-
-  afterAll((done) => {
-    server.close(done);
+  afterEach((done) => {
+    // Close the server after each test
+    if (server && server.listening) {
+      server.close(done);
+    } else {
+      done();
+    }
   });
 
   // Test GET /api/users
@@ -81,7 +87,7 @@ describe('User Routes', () => {
     ];
     db.query.mockResolvedValueOnce({ rows: mockUsers });
 
-    const response = await supertest(app).get('/api/users');
+    const response = await request.get('/api/users');
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
       message: 'Users Found',
@@ -102,7 +108,7 @@ describe('User Routes', () => {
       password: 'mockpassword',
       phone_number: '1234567890',
     };
-    const response = await supertest(app).get('/api/users/1');
+    const response = await request.get('/api/users/1');
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
       message: 'User found',
@@ -117,7 +123,7 @@ describe('User Routes', () => {
   test('DELETE /api/users/:userId should delete a user (admin)', async () => {
     db.query.mockResolvedValueOnce({ rows: [] });
 
-    const response = await supertest(app).delete('/api/users/1');
+    const response = await request.delete('/api/users/1');
     expect(response.status).toBe(204);
     expect(response.body).toEqual({}); // 204 typically has no body
     expect(db.query).toHaveBeenCalledWith(
